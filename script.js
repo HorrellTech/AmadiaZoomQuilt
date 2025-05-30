@@ -67,6 +67,13 @@ class ZoomQuiltGenerator {
         document.getElementById('playPauseBtn').addEventListener('click', () => this.togglePlayPause());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetAnimation());
         document.getElementById('downloadBtn').addEventListener('click', () => this.downloadAnimation());
+        document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', () => this.updateFullscreenButton());
+        document.addEventListener('webkitfullscreenchange', () => this.updateFullscreenButton());
+        document.addEventListener('msfullscreenchange', () => this.updateFullscreenButton());
+        document.addEventListener('mozfullscreenchange', () => this.updateFullscreenButton());
     }
 
     setupDragAndDrop() {
@@ -112,6 +119,60 @@ class ZoomQuiltGenerator {
 
         this.updateImageList();
         this.updateButtons();
+    }
+
+    toggleFullscreen() {
+        const canvasContainer = document.querySelector('.canvas-container');
+        
+        if (!this.isFullscreen()) {
+            this.enterFullscreen(canvasContainer);
+        } else {
+            this.exitFullscreen();
+        }
+    }
+
+    isFullscreen() {
+        return !!(document.fullscreenElement || 
+                document.webkitFullscreenElement || 
+                document.mozFullScreenElement || 
+                document.msFullscreenElement);
+    }
+
+    enterFullscreen(element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+    }
+
+    exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+
+    updateFullscreenButton() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        if (this.isFullscreen()) {
+            fullscreenBtn.innerHTML = '🗗 Exit Fullscreen';
+            fullscreenBtn.title = 'Exit Fullscreen';
+            document.querySelector('.canvas-container').classList.add('fullscreen-active');
+        } else {
+            fullscreenBtn.innerHTML = '🗖 Fullscreen';
+            fullscreenBtn.title = 'Enter Fullscreen';
+            document.querySelector('.canvas-container').classList.remove('fullscreen-active');
+        }
     }
 
     loadImage(file) {
@@ -162,7 +223,9 @@ class ZoomQuiltGenerator {
                     <p>${img.width} × ${img.height} | ${this.formatFileSize(img.size)}</p>
                 </div>
                 <div class="image-controls">
-                    <button class="control-btn" onclick="zoomQuilt.removeImage('${img.id}')">×</button>
+                    <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageLeft('${img.id}')" ${index === 0 ? 'disabled' : ''} title="Move Left">◀</button>
+                    <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageRight('${img.id}')" ${index === this.images.length - 1 ? 'disabled' : ''} title="Move Right">▶</button>
+                    <button class="control-btn remove-btn" onclick="zoomQuilt.removeImage('${img.id}')" title="Remove">×</button>
                 </div>
             </div>
         `).join('');
@@ -173,10 +236,12 @@ class ZoomQuiltGenerator {
     setupImageSorting() {
         const imageList = document.getElementById('imageList');
         let draggedElement = null;
+        let draggedIndex = -1;
 
         imageList.addEventListener('dragstart', (e) => {
             if (e.target.classList.contains('image-item')) {
                 draggedElement = e.target;
+                draggedIndex = Array.from(imageList.children).indexOf(draggedElement);
                 e.target.classList.add('dragging');
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/html', e.target.outerHTML);
@@ -187,13 +252,18 @@ class ZoomQuiltGenerator {
             if (e.target.classList.contains('image-item')) {
                 e.target.classList.remove('dragging');
                 draggedElement = null;
+                draggedIndex = -1;
             }
-        }); imageList.addEventListener('dragover', (e) => {
+        });
+
+        imageList.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
 
             if (draggedElement) {
                 const afterElement = this.getDragAfterElement(imageList, e.clientY);
+                const currentItems = Array.from(imageList.querySelectorAll('.image-item:not(.dragging)'));
+                
                 if (afterElement == null) {
                     imageList.appendChild(draggedElement);
                 } else {
@@ -204,8 +274,53 @@ class ZoomQuiltGenerator {
 
         imageList.addEventListener('drop', (e) => {
             e.preventDefault();
-            this.reorderImages();
+            if (draggedElement) {
+                // Get the new position
+                const newIndex = Array.from(imageList.children).indexOf(draggedElement);
+                
+                // Only reorder if position actually changed
+                if (newIndex !== draggedIndex && draggedIndex !== -1) {
+                    this.reorderImages();
+                }
+            }
         });
+    }
+
+    moveImageLeft(id) {
+        const currentIndex = this.images.findIndex(img => img.id == id);
+        if (currentIndex > 0) {
+            // Swap with previous image
+            [this.images[currentIndex - 1], this.images[currentIndex]] = 
+            [this.images[currentIndex], this.images[currentIndex - 1]];
+            this.updateImageList();
+            
+            // Regenerate if animation is playing
+            if (this.isPlaying && this.loadedImages.length > 0) {
+                this.regenerateImages();
+            }
+        }
+    }
+
+    moveImageRight(id) {
+        const currentIndex = this.images.findIndex(img => img.id == id);
+        if (currentIndex < this.images.length - 1) {
+            // Swap with next image
+            [this.images[currentIndex], this.images[currentIndex + 1]] = 
+            [this.images[currentIndex + 1], this.images[currentIndex]];
+            this.updateImageList();
+            
+            // Regenerate if animation is playing
+            if (this.isPlaying && this.loadedImages.length > 0) {
+                this.regenerateImages();
+            }
+        }
+    }
+
+    async regenerateImages() {
+        // Only regenerate if we have images and animation is active
+        if (this.images.length > 0) {
+            this.loadedImages = await this.prepareImages();
+        }
     }
 
     getDragAfterElement(container, y) {
@@ -268,6 +383,9 @@ class ZoomQuiltGenerator {
     async generateZoomQuilt() {
         if (this.images.length === 0) return;
 
+        // Stop any existing animation first
+        this.pauseAnimation();
+
         // Prepare images for rendering
         this.loadedImages = await this.prepareImages();
 
@@ -276,7 +394,9 @@ class ZoomQuiltGenerator {
 
         // Enable download button
         document.getElementById('downloadBtn').disabled = false;
-    } async prepareImages() {
+    }
+    
+    async prepareImages() {
         const loadedImages = [];
 
         for (const imageData of this.images) {
@@ -320,7 +440,9 @@ class ZoomQuiltGenerator {
         }
 
         return loadedImages;
-    } applyFadeEffect(ctx, width, height) {
+    } 
+    
+    applyFadeEffect(ctx, width, height) {
         if (this.fadeIntensity === 0) return;
 
         // Create a more sophisticated fade effect
@@ -369,12 +491,23 @@ class ZoomQuiltGenerator {
         ctx.fillRect(width - fadeSize, 0, fadeSize, height);
 
         ctx.globalCompositeOperation = 'source-over';
-    } startAnimation() {
+    } 
+    
+    startAnimation() {
+        // First, stop any existing animation to prevent accumulation
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
         this.isPlaying = true;
-        this.zoomLevel = 0; // Start from 0 for logarithmic zoom
+        // Always reset zoom level when generating fresh to prevent accumulation
+        this.zoomLevel = 0;
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
         this.animate();
-    } animate() {
+    }
+
+    animate() {
         if (!this.isPlaying) return;
 
         if (this.loadedImages.length === 0) return;
@@ -451,6 +584,9 @@ class ZoomQuiltGenerator {
     previewZoomQuilt() {
         if (this.images.length === 0) return;
 
+        // Stop any existing animation first
+        this.pauseAnimation();
+        
         // Generate a single frame preview
         this.generateZoomQuilt();
     }
@@ -467,15 +603,24 @@ class ZoomQuiltGenerator {
         this.isPlaying = false;
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
+            this.animationId = null; // Clear the ID after canceling
         }
         document.getElementById('playPauseBtn').textContent = '▶️ Play';
     }
 
     resumeAnimation() {
+        // Make sure we don't have multiple animations running
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
         this.isPlaying = true;
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
         this.animate();
-    } resetAnimation() {
+    }
+    
+    resetAnimation() {
         this.pauseAnimation();
         this.zoomLevel = 0; // Reset to 0 for logarithmic zoom
 
@@ -534,6 +679,317 @@ class ZoomQuiltGenerator {
 
         // Show info about additional frames
         alert(`Captured ${frames.length} frames! In a full implementation, these would be packaged as an animated GIF or video file.`);
+    }
+
+    async downloadAnimation() {
+        if (this.loadedImages.length === 0) {
+            alert('Please generate the zoom quilt first!');
+            return;
+        }
+        
+        // Show the export modal
+        this.showExportModal();
+    }
+
+    showExportModal() {
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal-overlay" id="exportModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>🎬 Export Zoom Quilt Animation</h3>
+                        <button class="modal-close" onclick="zoomQuilt.closeExportModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="export-options">
+                            <div class="option-group">
+                                <label for="exportFormat">Export Format</label>
+                                <select id="exportFormat">
+                                    <option value="webm">WebM (Recommended)</option>
+                                    <option value="mp4">MP4</option>
+                                    <option value="gif">Animated GIF</option>
+                                </select>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label for="exportCycles">Number of Cycles</label>
+                                <input type="number" id="exportCycles" min="1" max="10" value="2" step="1">
+                                <small>Complete loops through all images</small>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label for="exportFPS">Frame Rate (FPS)</label>
+                                <input type="range" id="exportFPS" min="15" max="60" value="30" step="1">
+                                <span class="value-display" id="exportFPSValue">30 FPS</span>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label for="exportQuality">Quality</label>
+                                <input type="range" id="exportQuality" min="0.1" max="1" value="0.8" step="0.1">
+                                <span class="value-display" id="exportQualityValue">0.8</span>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label for="exportResolution">Resolution</label>
+                                <select id="exportResolution">
+                                    <option value="800x600">800×600 (Current)</option>
+                                    <option value="1920x1080">1920×1080 (Full HD)</option>
+                                    <option value="1280x720">1280×720 (HD)</option>
+                                    <option value="640x480">640×480 (SD)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="export-info">
+                            <p id="exportEstimate">Estimated file size: ~5MB</p>
+                            <div class="progress-container" id="exportProgress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <span id="progressText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="zoomQuilt.closeExportModal()">Cancel</button>
+                        <button class="btn btn-success" onclick="zoomQuilt.startExport()">🎬 Start Export</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Setup event listeners for the modal
+        this.setupExportModalListeners();
+    }
+
+    setupExportModalListeners() {
+        // Update FPS display
+        document.getElementById('exportFPS').addEventListener('input', (e) => {
+            document.getElementById('exportFPSValue').textContent = `${e.target.value} FPS`;
+            this.updateExportEstimate();
+        });
+        
+        // Update quality display
+        document.getElementById('exportQuality').addEventListener('input', (e) => {
+            document.getElementById('exportQualityValue').textContent = e.target.value;
+            this.updateExportEstimate();
+        });
+        
+        // Update estimate when other options change
+        ['exportFormat', 'exportCycles', 'exportResolution'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                this.updateExportEstimate();
+            });
+        });
+    }
+
+    updateExportEstimate() {
+        const cycles = parseInt(document.getElementById('exportCycles').value);
+        const fps = parseInt(document.getElementById('exportFPS').value);
+        const format = document.getElementById('exportFormat').value;
+        const resolution = document.getElementById('exportResolution').value;
+        
+        // Calculate estimated duration and file size
+        const cycleLength = Math.log(1 / this.scaleRatio);
+        const duration = (cycles * cycleLength) / (0.005 * this.zoomSpeed);
+        const totalFrames = Math.ceil(duration * fps / 60); // Convert to seconds
+        
+        let estimatedSize = 0;
+        const [width, height] = resolution.split('x').map(Number);
+        const pixelCount = width * height;
+        
+        switch (format) {
+            case 'webm':
+                estimatedSize = (pixelCount * totalFrames * 0.1) / (1024 * 1024); // ~0.1 bytes per pixel for WebM
+                break;
+            case 'mp4':
+                estimatedSize = (pixelCount * totalFrames * 0.15) / (1024 * 1024); // ~0.15 bytes per pixel for MP4
+                break;
+            case 'gif':
+                estimatedSize = (pixelCount * totalFrames * 0.5) / (1024 * 1024); // ~0.5 bytes per pixel for GIF
+                break;
+        }
+        
+        document.getElementById('exportEstimate').textContent = 
+            `Estimated: ${totalFrames} frames, ${Math.ceil(duration / 60)}s duration, ~${Math.ceil(estimatedSize)}MB`;
+    }
+
+    closeExportModal() {
+        const modal = document.getElementById('exportModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async startExport() {
+        const format = document.getElementById('exportFormat').value;
+        const cycles = parseInt(document.getElementById('exportCycles').value);
+        const fps = parseInt(document.getElementById('exportFPS').value);
+        const quality = parseFloat(document.getElementById('exportQuality').value);
+        const resolution = document.getElementById('exportResolution').value;
+        
+        // Show progress
+        document.getElementById('exportProgress').style.display = 'block';
+        
+        try {
+            if (format === 'gif') {
+                await this.exportAsGIF(cycles, fps, resolution);
+            } else {
+                await this.exportAsVideo(format, cycles, fps, quality, resolution);
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed: ' + error.message);
+        }
+        
+        this.closeExportModal();
+    }
+
+    async exportAsVideo(format, cycles, fps, quality, resolution) {
+        // Check if MediaRecorder is supported
+        if (!window.MediaRecorder) {
+            throw new Error('Video recording is not supported in this browser');
+        }
+        
+        const [width, height] = resolution.split('x').map(Number);
+        
+        // Create a temporary canvas for export
+        const exportCanvas = document.createElement('canvas');
+        const exportCtx = exportCanvas.getContext('2d');
+        exportCanvas.width = width;
+        exportCanvas.height = height;
+        
+        // Setup MediaRecorder
+        const stream = exportCanvas.captureStream(fps);
+        const mimeType = format === 'webm' ? 'video/webm' : 'video/mp4';
+        const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: mimeType,
+            videoBitsPerSecond: width * height * fps * quality * 0.1
+        });
+        
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        
+        return new Promise((resolve, reject) => {
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                this.downloadBlob(blob, `zoom-quilt.${format}`);
+                resolve();
+            };
+            
+            mediaRecorder.onerror = reject;
+            
+            // Start recording
+            mediaRecorder.start();
+            
+            // Render frames
+            this.renderExportFrames(exportCanvas, exportCtx, cycles, fps, width, height)
+                .then(() => {
+                    mediaRecorder.stop();
+                })
+                .catch(reject);
+        });
+    }
+
+    async renderExportFrames(canvas, ctx, cycles, fps, width, height) {
+        const originalZoom = this.zoomLevel;
+        const wasPlaying = this.isPlaying;
+        this.pauseAnimation();
+        
+        // Calculate frame parameters
+        const cycleLength = Math.log(1 / this.scaleRatio);
+        const totalZoom = cycles * cycleLength;
+        const frameInterval = totalZoom / (cycles * fps * 2); // 2 seconds per cycle
+        const totalFrames = Math.ceil(totalZoom / frameInterval);
+        
+        // Scale factor for export resolution
+        const scaleX = width / this.canvas.width;
+        const scaleY = height / this.canvas.height;
+        
+        for (let frame = 0; frame < totalFrames; frame++) {
+            // Update progress
+            const progress = (frame / totalFrames) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
+            
+            // Set zoom level for this frame
+            this.zoomLevel = frame * frameInterval;
+            
+            // Clear export canvas
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Render the zoom quilt frame to export canvas
+            this.drawZoomQuiltFrameToCanvas(ctx, width, height, scaleX, scaleY);
+            
+            // Wait for next frame
+            await new Promise(resolve => setTimeout(resolve, 1000 / fps));
+        }
+        
+        // Restore original state
+        this.zoomLevel = originalZoom;
+        if (wasPlaying) {
+            this.resumeAnimation();
+        }
+    }
+
+    drawZoomQuiltFrameToCanvas(ctx, width, height, scaleX, scaleY) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        if (this.loadedImages.length === 0) return;
+        
+        // Same logic as main drawZoomQuiltFrame but adapted for export canvas
+        const cycleLength = Math.log(1 / this.scaleRatio);
+        const currentCycle = this.zoomLevel / cycleLength;
+        const baseImageIndex = Math.floor(currentCycle) % this.loadedImages.length;
+        const cycleProgress = currentCycle - Math.floor(currentCycle);
+        const baseZoom = Math.exp(cycleProgress * cycleLength);
+        const totalLayers = this.loadedImages.length + 6;
+        
+        for (let layer = -3; layer < totalLayers; layer++) {
+            const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
+            const imageCanvas = this.loadedImages[imageIndex].canvas;
+            const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
+            
+            if (layerScale < 0.001 || layerScale > 12) continue;
+            
+            const scaledWidth = width * layerScale;
+            const scaledHeight = height * layerScale;
+            const x = centerX - scaledWidth / 2;
+            const y = centerY - scaledHeight / 2;
+            
+            ctx.globalCompositeOperation = this.blendMode;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Scale the source canvas to match export resolution
+            ctx.drawImage(imageCanvas, 
+                0, 0, imageCanvas.width, imageCanvas.height,
+                x, y, scaledWidth, scaledHeight
+            );
+        }
+        
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    async exportAsGIF(cycles, fps, resolution) {
+        // For GIF export, we'll capture frames and download them as a sequence
+        // In a production app, you'd want to use a library like gif.js
+        alert('GIF export requires additional libraries. For now, use WebM or MP4 format.');
+    }
+
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 }
 
