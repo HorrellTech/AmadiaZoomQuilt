@@ -4,7 +4,7 @@ class ZoomQuiltGenerator {
         this.images = [];
         this.animationId = null;
         this.isPlaying = false;
-        this.zoomLevel = 0; // Changed to continuous zoom level
+        this.zoomLevel = 0;
         this.zoomSpeed = 1;
         this.blendMode = 'normal';
         this.fadeIntensity = 20;
@@ -12,15 +12,30 @@ class ZoomQuiltGenerator {
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
+        
+        // Audio properties
+        this.audioFile = null;
+        this.audioElement = null;
+        this.audioContext = null;
+        this.analyser = null;
+        this.dataArray = null;
+        this.audioSource = null;
+        this.audioEnabled = false;
+        this.audioReactiveIntensity = 2.0;
+        this.audioFreqMin = 60;  // Hz
+        this.audioFreqMax = 250; // Hz
+        this.baseZoomSpeed = 1.0;
 
         this.init();
     }
 
     init() {
         this.setupCanvas();
+        this.initializeUploadArea();
         this.setupEventListeners();
         this.setupDragAndDrop();
         this.updateControlValues();
+        this.setupAudio();
     }
 
     setupCanvas() {
@@ -36,14 +51,51 @@ class ZoomQuiltGenerator {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
+    setupAudio() {
+        // Create audio element
+        this.audioElement = document.createElement('audio');
+        this.audioElement.loop = true;
+        this.audioElement.volume = 0.7;
+        
+        // Add audio controls to the page
+        const audioControls = document.getElementById('audioControls');
+        if (audioControls) {
+            audioControls.appendChild(this.audioElement);
+        }
+    }
+
+    async initAudioContext() {
+        if (!this.audioContext) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 2048;
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                
+                if (this.audioElement && !this.audioSource) {
+                    this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
+                    this.audioSource.connect(this.analyser);
+                    this.analyser.connect(this.audioContext.destination);
+                }
+            } catch (error) {
+                console.error('Failed to initialize audio context:', error);
+            }
+        }
+    }
+
     setupEventListeners() {
         // File input
         const fileInput = document.getElementById('fileInput');
         fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
 
+        // Audio file input
+        const audioInput = document.getElementById('audioInput');
+        audioInput.addEventListener('change', (e) => this.handleAudioSelect(e));
+
         // Control inputs
         document.getElementById('zoomSpeed').addEventListener('input', (e) => {
             this.zoomSpeed = parseFloat(e.target.value);
+            this.baseZoomSpeed = this.zoomSpeed;
             document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
         });
 
@@ -59,6 +111,35 @@ class ZoomQuiltGenerator {
         document.getElementById('scaleRatio').addEventListener('input', (e) => {
             this.scaleRatio = parseFloat(e.target.value);
             document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
+        });
+
+        // Audio controls
+        document.getElementById('audioReactiveIntensity').addEventListener('input', (e) => {
+            this.audioReactiveIntensity = parseFloat(e.target.value);
+            document.getElementById('audioIntensityValue').textContent = `${this.audioReactiveIntensity}x`;
+        });
+
+        document.getElementById('audioFreqMin').addEventListener('input', (e) => {
+            this.audioFreqMin = parseInt(e.target.value);
+            document.getElementById('audioFreqMinValue').textContent = `${this.audioFreqMin}Hz`;
+        });
+
+        document.getElementById('audioFreqMax').addEventListener('input', (e) => {
+            this.audioFreqMax = parseInt(e.target.value);
+            document.getElementById('audioFreqMaxValue').textContent = `${this.audioFreqMax}Hz`;
+        });
+
+        document.getElementById('audioVolume').addEventListener('input', (e) => {
+            const volume = parseFloat(e.target.value);
+            if (this.audioElement) {
+                this.audioElement.volume = volume;
+            }
+            document.getElementById('audioVolumeValue').textContent = `${Math.round(volume * 100)}%`;
+        });
+
+        document.getElementById('audioEnabled').addEventListener('change', (e) => {
+            this.audioEnabled = e.target.checked;
+            this.updateAudioControls();
         });
 
         // Action buttons
@@ -340,12 +421,17 @@ class ZoomQuiltGenerator {
 
             if (draggedElement) {
                 const afterElement = this.getDragAfterElement(imageList, e.clientY);
-                const currentItems = Array.from(imageList.querySelectorAll('.image-item:not(.dragging)'));
                 
-                if (afterElement == null) {
-                    imageList.appendChild(draggedElement);
+                if (afterElement === null) {
+                    // Insert at the end if no element is after
+                    if (imageList.lastElementChild !== draggedElement) {
+                        imageList.appendChild(draggedElement);
+                    }
                 } else {
-                    imageList.insertBefore(draggedElement, afterElement);
+                    // Insert before the found element
+                    if (afterElement !== draggedElement && afterElement.previousElementSibling !== draggedElement) {
+                        imageList.insertBefore(draggedElement, afterElement);
+                    }
                 }
             }
         });
@@ -404,7 +490,7 @@ class ZoomQuiltGenerator {
     getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.image-item:not(.dragging)')];
 
-        return draggableElements.reduce((closest, child) => {
+        const result = draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
 
@@ -413,7 +499,9 @@ class ZoomQuiltGenerator {
             } else {
                 return closest;
             }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }, { offset: Number.NEGATIVE_INFINITY, element: null });
+
+        return result.element; // This should always return a valid element or null
     }
 
     reorderImages() {
@@ -456,6 +544,10 @@ class ZoomQuiltGenerator {
         document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
         document.getElementById('fadeIntensityValue').textContent = `${this.fadeIntensity}%`;
         document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
+        document.getElementById('audioIntensityValue').textContent = `${this.audioReactiveIntensity}x`;
+        document.getElementById('audioFreqMinValue').textContent = `${this.audioFreqMin}Hz`;
+        document.getElementById('audioFreqMaxValue').textContent = `${this.audioFreqMax}Hz`;
+        document.getElementById('audioVolumeValue').textContent = '70%';
     }
 
     async generateZoomQuilt() {
@@ -464,11 +556,26 @@ class ZoomQuiltGenerator {
         // Stop any existing animation first
         this.pauseAnimation();
 
+        // Initialize audio context if needed
+        if (this.audioEnabled && this.audioFile) {
+            await this.initAudioContext();
+        }
+
         // Prepare images for rendering
         this.loadedImages = await this.prepareImages();
 
         // Start the animation
         this.startAnimation();
+
+        // Start audio if enabled
+        if (this.audioEnabled && this.audioElement) {
+            try {
+                this.audioElement.currentTime = 0;
+                await this.audioElement.play();
+            } catch (error) {
+                console.error('Failed to play audio:', error);
+            }
+        }
 
         // Enable download button
         document.getElementById('downloadBtn').disabled = false;
@@ -590,6 +697,9 @@ class ZoomQuiltGenerator {
 
         if (this.loadedImages.length === 0) return;
 
+        // Update zoom speed based on audio
+        this.updateZoomSpeedWithAudio();
+
         // Continuous zoom increment - this creates smooth infinite zoom
         this.zoomLevel += 0.005 * this.zoomSpeed;
 
@@ -681,13 +791,18 @@ class ZoomQuiltGenerator {
         this.isPlaying = false;
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
-            this.animationId = null; // Clear the ID after canceling
+            this.animationId = null;
         }
+        
+        // Pause audio
+        if (this.audioElement && !this.audioElement.paused) {
+            this.audioElement.pause();
+        }
+        
         document.getElementById('playPauseBtn').textContent = '▶️ Play';
     }
 
     resumeAnimation() {
-        // Make sure we don't have multiple animations running
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
@@ -695,12 +810,25 @@ class ZoomQuiltGenerator {
         
         this.isPlaying = true;
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
+        
+        // Resume audio
+        if (this.audioEnabled && this.audioElement && this.audioElement.paused) {
+            this.audioElement.play().catch(error => {
+                console.error('Failed to resume audio:', error);
+            });
+        }
+        
         this.animate();
     }
     
     resetAnimation() {
         this.pauseAnimation();
-        this.zoomLevel = 0; // Reset to 0 for logarithmic zoom
+        this.zoomLevel = 0;
+
+        // Reset audio
+        if (this.audioElement) {
+            this.audioElement.currentTime = 0;
+        }
 
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -712,51 +840,46 @@ class ZoomQuiltGenerator {
         }
     }
 
-    async downloadAnimation() {
-        if (this.loadedImages.length === 0) {
-            alert('Please generate the zoom quilt first!');
-            return;
-        }        // Create a simple GIF-like sequence by capturing frames
-        const frames = [];
-        const frameCount = 60; // Number of frames for the loop
-        const originalZoom = this.zoomLevel;
-
-        // Disable animation while capturing
-        const wasPlaying = this.isPlaying;
-        this.pauseAnimation();
-
-        // Capture frames
-        for (let i = 0; i < frameCount; i++) {
-            this.zoomLevel = (i / frameCount) * Math.log(1 / this.scaleRatio);
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = '#000000';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.drawZoomQuiltFrame();
-
-            // Capture frame as data URL
-            frames.push(this.canvas.toDataURL('image/png'));
+    getAudioIntensity() {
+        if (!this.audioEnabled || !this.analyser || !this.dataArray) {
+            return 0;
         }
 
-        // Restore original state
-        this.zoomLevel = originalZoom;
-        if (wasPlaying) {
-            this.resumeAnimation();
+        this.analyser.getByteFrequencyData(this.dataArray);
+        
+        // Calculate frequency bin range
+        const sampleRate = this.audioContext.sampleRate;
+        const fftSize = this.analyser.fftSize;
+        const binWidth = sampleRate / fftSize;
+        
+        const minBin = Math.floor(this.audioFreqMin / binWidth);
+        const maxBin = Math.floor(this.audioFreqMax / binWidth);
+        
+        // Calculate average amplitude in the specified frequency range
+        let sum = 0;
+        let count = 0;
+        
+        for (let i = minBin; i <= maxBin && i < this.dataArray.length; i++) {
+            sum += this.dataArray[i];
+            count++;
         }
-
-        // Create a zip file with all frames
-        this.downloadFrames(frames);
+        
+        if (count === 0) return 0;
+        
+        // Normalize to 0-1 range
+        const average = sum / count;
+        return average / 255;
     }
 
-    downloadFrames(frames) {
-        // For now, download the first frame as a sample
-        // In a production app, you'd want to use a library like JSZip to create a proper archive
-        const link = document.createElement('a');
-        link.download = 'zoom-quilt-frame.png';
-        link.href = frames[0];
-        link.click();
-
-        // Show info about additional frames
-        alert(`Captured ${frames.length} frames! In a full implementation, these would be packaged as an animated GIF or video file.`);
+    updateZoomSpeedWithAudio() {
+        if (this.audioEnabled && this.audioElement && !this.audioElement.paused) {
+            const audioIntensity = this.getAudioIntensity();
+            // Apply audio reactive intensity
+            const reactiveMultiplier = 1 + (audioIntensity * this.audioReactiveIntensity);
+            this.zoomSpeed = this.baseZoomSpeed * reactiveMultiplier;
+        } else {
+            this.zoomSpeed = this.baseZoomSpeed;
+        }
     }
 
     async downloadAnimation() {
@@ -770,6 +893,15 @@ class ZoomQuiltGenerator {
     }
 
     showExportModal() {
+        const audioReactiveInfo = this.audioEnabled && this.audioFile ? `
+            <div class="audio-export-info">
+                <h4>🎵 Audio-Reactive Export Enabled</h4>
+                <p>The export will sync to your audio file duration and include audio reactivity.</p>
+                <p><strong>Audio File:</strong> ${this.audioFile.name}</p>
+                <p><strong>Duration:</strong> ${this.audioElement.duration ? Math.floor(this.audioElement.duration / 60) + ':' + Math.floor(this.audioElement.duration % 60).toString().padStart(2, '0') : 'Unknown'}</p>
+            </div>
+        ` : '';
+
         // Create modal HTML
         const modalHtml = `
             <div class="modal-overlay" id="exportModal">
@@ -779,20 +911,23 @@ class ZoomQuiltGenerator {
                         <button class="modal-close" onclick="zoomQuilt.closeExportModal()">×</button>
                     </div>
                     <div class="modal-body">
+                        ${audioReactiveInfo}
+                        
                         <div class="export-options">
                             <div class="option-group">
                                 <label for="exportFormat">Export Format</label>
                                 <select id="exportFormat">
                                     <option value="webm">WebM (Recommended)</option>
                                     <option value="mp4">MP4</option>
-                                    <option value="gif">Animated GIF</option>
+                                    <option value="gif">Animated GIF (No Audio)</option>
                                 </select>
+                                ${this.audioEnabled && this.audioFile ? '<small>Audio will be included in video formats</small>' : ''}
                             </div>
                             
-                            <div class="option-group">
-                                <label for="exportCycles">Number of Cycles</label>
-                                <input type="number" id="exportCycles" min="1" max="10" value="2" step="1">
-                                <small>Complete loops through all images</small>
+                            <div class="option-group" ${this.audioEnabled && this.audioFile ? 'style="opacity: 0.5;"' : ''}>
+                                <label for="exportCycles">Number of Cycles ${this.audioEnabled && this.audioFile ? '(Overridden by Audio)' : ''}</label>
+                                <input type="number" id="exportCycles" min="1" max="10" value="2" step="1" ${this.audioEnabled && this.audioFile ? 'disabled' : ''}>
+                                <small>${this.audioEnabled && this.audioFile ? 'Duration set by audio file' : 'Complete loops through all images'}</small>
                             </div>
                             
                             <div class="option-group">
@@ -819,7 +954,7 @@ class ZoomQuiltGenerator {
                         </div>
                         
                         <div class="export-info">
-                            <p id="exportEstimate">Estimated file size: ~5MB</p>
+                            <p id="exportEstimate">Calculating...</p>
                             <div class="progress-container" id="exportProgress" style="display: none;">
                                 <div class="progress-bar">
                                     <div class="progress-fill" id="progressFill"></div>
@@ -841,6 +976,9 @@ class ZoomQuiltGenerator {
         
         // Setup event listeners for the modal
         this.setupExportModalListeners();
+        
+        // Initial estimate calculation
+        this.updateExportEstimate();
     }
 
     setupExportModalListeners() {
@@ -870,10 +1008,33 @@ class ZoomQuiltGenerator {
         const format = document.getElementById('exportFormat').value;
         const resolution = document.getElementById('exportResolution').value;
         
-        // Calculate estimated duration and file size
-        const cycleLength = Math.log(1 / this.scaleRatio);
-        const duration = (cycles * cycleLength) / (0.005 * this.zoomSpeed);
-        const totalFrames = Math.ceil(duration * fps / 60); // Convert to seconds
+        let duration, totalFrames;
+        
+        // Calculate duration based on audio reactivity
+        if (this.audioEnabled && this.audioFile && this.audioElement.duration) {
+            // Use audio duration when audio reactive is enabled
+            duration = this.audioElement.duration;
+            totalFrames = Math.ceil(duration * fps);
+            
+            // Update cycles input to show how many cycles will fit in audio duration
+            const cycleLength = Math.log(1 / this.scaleRatio);
+            const calculatedCycles = (duration * 0.005 * this.baseZoomSpeed) / cycleLength;
+            
+            // Add audio info to estimate
+            document.getElementById('exportEstimate').innerHTML = `
+                <strong>Audio-Reactive Export:</strong><br>
+                Duration: ${Math.floor(duration / 60)}:${Math.floor(duration % 60).toString().padStart(2, '0')}<br>
+                Frames: ${totalFrames} frames<br>
+                Cycles: ~${calculatedCycles.toFixed(1)} zoom cycles<br>
+                Audio: Included with reactivity
+            `;
+            return;
+        } else {
+            // Standard duration calculation for non-audio exports
+            const cycleLength = Math.log(1 / this.scaleRatio);
+            duration = (cycles * cycleLength) / (0.005 * this.baseZoomSpeed);
+            totalFrames = Math.ceil(duration * fps);
+        }
         
         let estimatedSize = 0;
         const [width, height] = resolution.split('x').map(Number);
@@ -881,18 +1042,18 @@ class ZoomQuiltGenerator {
         
         switch (format) {
             case 'webm':
-                estimatedSize = (pixelCount * totalFrames * 0.1) / (1024 * 1024); // ~0.1 bytes per pixel for WebM
+                estimatedSize = (pixelCount * totalFrames * 0.1) / (1024 * 1024);
                 break;
             case 'mp4':
-                estimatedSize = (pixelCount * totalFrames * 0.15) / (1024 * 1024); // ~0.15 bytes per pixel for MP4
+                estimatedSize = (pixelCount * totalFrames * 0.15) / (1024 * 1024);
                 break;
             case 'gif':
-                estimatedSize = (pixelCount * totalFrames * 0.5) / (1024 * 1024); // ~0.5 bytes per pixel for GIF
+                estimatedSize = (pixelCount * totalFrames * 0.5) / (1024 * 1024);
                 break;
         }
         
         document.getElementById('exportEstimate').textContent = 
-            `Estimated: ${totalFrames} frames, ${Math.ceil(duration / 60)}s duration, ~${Math.ceil(estimatedSize)}MB`;
+            `Estimated: ${totalFrames} frames, ${Math.ceil(duration)}s duration, ~${Math.ceil(estimatedSize)}MB`;
     }
 
     closeExportModal() {
@@ -940,12 +1101,46 @@ class ZoomQuiltGenerator {
         exportCanvas.width = width;
         exportCanvas.height = height;
         
+        // Create a separate audio element for export to avoid conflicts
+        let exportAudioElement = null;
+        let exportAudioContext = null;
+        let exportAudioSource = null;
+        
+        if (this.audioEnabled && this.audioFile) {
+            exportAudioElement = document.createElement('audio');
+            exportAudioElement.src = this.audioElement.src;
+            exportAudioElement.volume = this.audioElement.volume;
+            exportAudioElement.loop = false; // Don't loop for export
+        }
+        
         // Setup MediaRecorder
         const stream = exportCanvas.captureStream(fps);
+        
+        // Add audio track if audio reactive is enabled
+        if (exportAudioElement) {
+            try {
+                // Create separate audio context for export
+                exportAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                exportAudioSource = exportAudioContext.createMediaElementSource(exportAudioElement);
+                const audioDestination = exportAudioContext.createMediaStreamDestination();
+                exportAudioSource.connect(audioDestination);
+                
+                // Add audio track to the stream
+                const audioTracks = audioDestination.stream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    stream.addTrack(audioTracks[0]);
+                }
+            } catch (error) {
+                console.warn('Could not add audio to export:', error);
+                exportAudioElement = null; // Disable audio if it fails
+            }
+        }
+        
         const mimeType = format === 'webm' ? 'video/webm' : 'video/mp4';
         const mediaRecorder = new MediaRecorder(stream, {
             mimeType: mimeType,
-            videoBitsPerSecond: width * height * fps * quality * 0.1
+            videoBitsPerSecond: width * height * fps * quality * 0.1,
+            audioBitsPerSecond: exportAudioElement ? 128000 : undefined
         });
         
         const chunks = [];
@@ -954,7 +1149,13 @@ class ZoomQuiltGenerator {
         return new Promise((resolve, reject) => {
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: mimeType });
-                this.downloadBlob(blob, `zoom-quilt.${format}`);
+                this.downloadBlob(blob, `zoom-quilt-${this.audioEnabled ? 'audio-reactive' : 'standard'}.${format}`);
+                
+                // Clean up export audio context
+                if (exportAudioContext) {
+                    exportAudioContext.close();
+                }
+                
                 resolve();
             };
             
@@ -963,38 +1164,69 @@ class ZoomQuiltGenerator {
             // Start recording
             mediaRecorder.start();
             
-            // Render frames
-            this.renderExportFrames(exportCanvas, exportCtx, cycles, fps, width, height)
+            // Start export audio playback if available
+            if (exportAudioElement) {
+                exportAudioElement.currentTime = 0;
+                exportAudioElement.play().catch(console.error);
+            }
+            
+            // Render frames with proper timing
+            this.renderExportFrames(exportCanvas, exportCtx, cycles, fps, width, height, exportAudioElement)
                 .then(() => {
+                    // Stop export audio
+                    if (exportAudioElement && !exportAudioElement.paused) {
+                        exportAudioElement.pause();
+                    }
                     mediaRecorder.stop();
                 })
                 .catch(reject);
         });
     }
 
-    async renderExportFrames(canvas, ctx, cycles, fps, width, height) {
+    async renderExportFrames(canvas, ctx, cycles, fps, width, height, exportAudioElement = null) {
         const originalZoom = this.zoomLevel;
         const wasPlaying = this.isPlaying;
         this.pauseAnimation();
         
-        // Calculate frame parameters
-        const cycleLength = Math.log(1 / this.scaleRatio);
-        const totalZoom = cycles * cycleLength;
-        const frameInterval = totalZoom / (cycles * fps * 2); // 2 seconds per cycle
-        const totalFrames = Math.ceil(totalZoom / frameInterval);
+        // Prepare images for export resolution
+        const exportImages = await this.prepareImagesForExport(width, height);
         
-        // Scale factor for export resolution
-        const scaleX = width / this.canvas.width;
-        const scaleY = height / this.canvas.height;
+        let duration, totalFrames, frameInterval;
+        
+        if (this.audioEnabled && this.audioFile && this.audioElement.duration) {
+            // Audio-reactive export: sync to audio duration
+            duration = this.audioElement.duration;
+            totalFrames = Math.ceil(duration * fps);
+            frameInterval = 1 / fps; // Time per frame in seconds
+        } else {
+            // Standard export: use cycles
+            const cycleLength = Math.log(1 / this.scaleRatio);
+            const totalZoom = cycles * cycleLength;
+            duration = (cycles * cycleLength) / (0.005 * this.baseZoomSpeed);
+            totalFrames = Math.ceil(duration * fps);
+            frameInterval = 1 / fps;
+        }
+        
+        const startTime = performance.now();
         
         for (let frame = 0; frame < totalFrames; frame++) {
             // Update progress
             const progress = (frame / totalFrames) * 100;
             document.getElementById('progressFill').style.width = `${progress}%`;
-            document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
+            document.getElementById('progressText').textContent = `${Math.round(progress)}% - Frame ${frame + 1}/${totalFrames}`;
             
-            // Set zoom level for this frame
-            this.zoomLevel = frame * frameInterval;
+            const currentTime = frame * frameInterval;
+            
+            if (this.audioEnabled && this.audioFile && exportAudioElement) {
+                // Audio-reactive mode: calculate zoom based on time and simulated audio intensity
+                // For a more accurate implementation, you'd pre-analyze the audio file
+                const baseIntensity = Math.sin(currentTime * 2) * 0.5 + 0.5; // Simulate audio intensity
+                const reactiveSpeed = this.baseZoomSpeed * (1 + (baseIntensity * this.audioReactiveIntensity));
+                this.zoomLevel = currentTime * 0.005 * reactiveSpeed;
+            } else {
+                // Standard mode: linear zoom progression
+                this.zoomLevel = currentTime * 0.005 * this.baseZoomSpeed;
+            }
             
             // Clear export canvas
             ctx.clearRect(0, 0, width, height);
@@ -1002,10 +1234,18 @@ class ZoomQuiltGenerator {
             ctx.fillRect(0, 0, width, height);
             
             // Render the zoom quilt frame to export canvas
-            this.drawZoomQuiltFrameToCanvas(ctx, width, height, scaleX, scaleY);
+            this.drawZoomQuiltFrameToExportCanvas(ctx, width, height, exportImages);
             
-            // Wait for next frame
-            await new Promise(resolve => setTimeout(resolve, 1000 / fps));
+            // Wait for the appropriate time to maintain frame rate
+            if (frame < totalFrames - 1) {
+                const expectedTime = startTime + ((frame + 1) * 1000 / fps);
+                const currentRealTime = performance.now();
+                const waitTime = Math.max(0, expectedTime - currentRealTime);
+                
+                if (waitTime > 0) {
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
         }
         
         // Restore original state
@@ -1015,23 +1255,103 @@ class ZoomQuiltGenerator {
         }
     }
 
-    drawZoomQuiltFrameToCanvas(ctx, width, height, scaleX, scaleY) {
+    async prepareImagesForExport(width, height) {
+        const exportImages = [];
+
+        for (const imageData of this.images) {
+            // Create canvas for each image with export dimensions
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size to export dimensions
+            canvas.width = width;
+            canvas.height = height;
+
+            // Calculate image scaling to cover the entire canvas
+            const scaleX = canvas.width / imageData.width;
+            const scaleY = canvas.height / imageData.height;
+            const scale = Math.max(scaleX, scaleY);
+
+            const scaledWidth = imageData.width * scale;
+            const scaledHeight = imageData.height * scale;
+            const x = (canvas.width - scaledWidth) / 2;
+            const y = (canvas.height - scaledHeight) / 2;
+
+            // Fill canvas with black first
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Enable high-quality image smoothing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Draw the image to cover the entire canvas
+            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
+
+            // Apply fade effect to edges
+            this.applyFadeEffect(ctx, canvas.width, canvas.height);
+
+            exportImages.push({
+                canvas: canvas,
+                ctx: ctx,
+                originalData: imageData
+            });
+        }
+
+        return exportImages;
+    }
+
+    getAudioIntensityForExport() {
+        // For export, we need to sample audio data at current time
+        // This is a simplified version - in practice, you'd want to pre-analyze the audio
+        if (!this.audioEnabled || !this.analyser || !this.dataArray) {
+            return 0;
+        }
+
+        // Get current audio data
+        this.analyser.getByteFrequencyData(this.dataArray);
+        
+        // Calculate frequency bin range
+        const sampleRate = this.audioContext.sampleRate;
+        const fftSize = this.analyser.fftSize;
+        const binWidth = sampleRate / fftSize;
+        
+        const minBin = Math.floor(this.audioFreqMin / binWidth);
+        const maxBin = Math.floor(this.audioFreqMax / binWidth);
+        
+        // Calculate average amplitude in the specified frequency range
+        let sum = 0;
+        let count = 0;
+        
+        for (let i = minBin; i <= maxBin && i < this.dataArray.length; i++) {
+            sum += this.dataArray[i];
+            count++;
+        }
+        
+        if (count === 0) return 0;
+        
+        // Normalize to 0-1 range
+        const average = sum / count;
+        return average / 255;
+    }
+
+    drawZoomQuiltFrameToExportCanvas(ctx, width, height, exportImages) {
         const centerX = width / 2;
         const centerY = height / 2;
         
-        if (this.loadedImages.length === 0) return;
+        if (exportImages.length === 0) return;
         
-        // Same logic as main drawZoomQuiltFrame but adapted for export canvas
+        // Same logic as main drawZoomQuiltFrame but adapted for export
         const cycleLength = Math.log(1 / this.scaleRatio);
         const currentCycle = this.zoomLevel / cycleLength;
-        const baseImageIndex = Math.floor(currentCycle) % this.loadedImages.length;
+        const baseImageIndex = Math.floor(currentCycle) % exportImages.length;
         const cycleProgress = currentCycle - Math.floor(currentCycle);
         const baseZoom = Math.exp(cycleProgress * cycleLength);
-        const totalLayers = this.loadedImages.length + 6;
+        const totalLayers = exportImages.length + 6;
         
         for (let layer = -3; layer < totalLayers; layer++) {
-            const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
-            const imageCanvas = this.loadedImages[imageIndex].canvas;
+            const imageIndex = ((baseImageIndex + layer) % exportImages.length + exportImages.length) % exportImages.length;
+            const imageCanvas = exportImages[imageIndex].canvas;
             const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
             if (layerScale < 0.001 || layerScale > 12) continue;
@@ -1045,7 +1365,7 @@ class ZoomQuiltGenerator {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
-            // Scale the source canvas to match export resolution
+            // Draw the image scaled for export resolution
             ctx.drawImage(imageCanvas, 
                 0, 0, imageCanvas.width, imageCanvas.height,
                 x, y, scaledWidth, scaledHeight
@@ -1068,6 +1388,162 @@ class ZoomQuiltGenerator {
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    async handleAudioSelect(e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('audio/')) {
+            this.audioFile = file;
+            
+            // Create object URL for the audio file
+            const audioURL = URL.createObjectURL(file);
+            this.audioElement.src = audioURL;
+            
+            // Update UI
+            document.getElementById('audioFileName').textContent = file.name;
+            document.getElementById('audioFileSize').textContent = this.formatFileSize(file.size);
+            document.getElementById('audioInfo').style.display = 'block';
+            
+            // Enable audio controls
+            document.getElementById('audioEnabled').disabled = false;
+            
+            // Initialize audio context on user interaction
+            await this.initAudioContext();
+        }
+    }
+
+    updateAudioControls() {
+        const audioControlsSection = document.querySelector('.audio-controls');
+        if (audioControlsSection) {
+            audioControlsSection.style.opacity = this.audioEnabled ? '1' : '0.5';
+            
+            // Enable/disable audio control inputs
+            ['audioReactiveIntensity', 'audioFreqMin', 'audioFreqMax', 'audioVolume'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.disabled = !this.audioEnabled;
+                }
+            });
+        }
+    }
+
+    // Add audio preset methods
+    applyAudioPreset(presetName) {
+        const presets = {
+            bass: {
+                freqMin: 20,
+                freqMax: 100,
+                intensity: 3.0
+            },
+            rock: {
+                freqMin: 100,
+                freqMax: 400,
+                intensity: 2.5
+            },
+            vocal: {
+                freqMin: 200,
+                freqMax: 600,
+                intensity: 2.0
+            },
+            classical: {
+                freqMin: 60,
+                freqMax: 800,
+                intensity: 1.5
+            },
+            treble: {
+                freqMin: 400,
+                freqMax: 1000,
+                intensity: 2.8
+            },
+            fullrange: {
+                freqMin: 20,
+                freqMax: 1000,
+                intensity: 1.8
+            }
+        };
+
+        const preset = presets[presetName];
+        if (preset) {
+            // Update values
+            this.audioFreqMin = preset.freqMin;
+            this.audioFreqMax = preset.freqMax;
+            this.audioReactiveIntensity = preset.intensity;
+
+            // Update UI elements
+            document.getElementById('audioFreqMin').value = preset.freqMin;
+            document.getElementById('audioFreqMax').value = preset.freqMax;
+            document.getElementById('audioReactiveIntensity').value = preset.intensity;
+
+            // Update display values
+            document.getElementById('audioFreqMinValue').textContent = `${preset.freqMin}Hz`;
+            document.getElementById('audioFreqMaxValue').textContent = `${preset.freqMax}Hz`;
+            document.getElementById('audioIntensityValue').textContent = `${preset.intensity}x`;
+
+            // Show feedback
+            this.showPresetAppliedFeedback(presetName);
+        }
+    }
+
+    showPresetAppliedFeedback(presetName) {
+        // Create a temporary feedback message
+        const feedback = document.createElement('div');
+        feedback.textContent = `✓ ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} preset applied!`;
+        feedback.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease-out forwards;
+        `;
+
+        document.body.appendChild(feedback);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            feedback.style.animation = 'slideOutRight 0.3s ease-in forwards';
+            setTimeout(() => feedback.remove(), 300);
+        }, 2700);
+    }
+
+    // Fix the getDragAfterElement method to handle null properly
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.image-item:not(.dragging)')];
+
+        const result = draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY, element: null });
+
+        return result.element;
+    }
+
+    // Add method to handle empty upload area initialization
+    initializeUploadArea() {
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea && !uploadArea.innerHTML.trim()) {
+            uploadArea.innerHTML = `
+                <div class="upload-content">
+                    <div class="upload-icon">🖼️</div>
+                    <h3>Drop your images here</h3>
+                    <p>Or click to browse files</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                        Choose Images
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 

@@ -1,0 +1,95 @@
+/* Audio Section Styles */
+.audio-section {
+    background: linear-gradient(135deg, rgba(139, 69, 19, 0.1) 0%, rgba(160, 82, 45, 0.1) 100%);
+    border: 1px solid rgba(160, 82, 45, 0.3);
+}
+
+.audio-upload {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.audio-info {
+    background: rgba(16, 16, 30, 0.6);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #374151;
+}
+
+.audio-file-info h4 {
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+}
+
+.audio-file-info p {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.audio-settings {
+    border-top: 1px solid rgba(160, 82, 45, 0.3);
+    padding-top: 1.5rem;
+}
+
+.audio-settings .control-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.audio-settings input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #667eea;
+}
+
+.audio-controls {
+    transition: opacity 0.3s ease;
+}
+
+.audio-controls:disabled {
+    opacity: 0.5;
+}
+
+/* Audio reactive indicator */
+.audio-reactive-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-left: 0.5rem;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.audio-frequency-display {
+    background: rgba(16, 16, 30, 0.4);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.frequency-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    transform-origin: left;
+    transition: transform 0.1s ease;
+}
+
+/* Responsive audio section */
+@media (max-width: 768px) {
+    .audio-upload {
+        grid-template-columns: 1fr;
+    }
+}

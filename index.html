@@ -6,6 +6,8 @@
     <title>Amadia Zoom Quilt Generator</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="export.css">
+    <link rel="stylesheet" href="audio.css">
+
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -100,6 +102,67 @@
                         <button class="btn btn-small" id="playPauseBtn">⏸️ Pause</button>
                         <button class="btn btn-small" id="resetBtn">🔄 Reset</button>
                         <button class="btn btn-small" id="fullscreenBtn" title="Enter Fullscreen">🗖 Fullscreen</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Audio Section -->
+            <section class="audio-section">
+                <h2>🎵 Audio Integration</h2>
+                <div class="audio-upload">
+                    <div class="upload-area" style="padding: 1.5rem;">
+                        <div class="upload-content">
+                            <div class="upload-icon" style="font-size: 2rem;">🎵</div>
+                            <h3>Import Audio Track</h3>
+                            <p>Add music to create reactive zoom videos</p>
+                            <input type="file" id="audioInput" accept="audio/*" hidden>
+                            <button class="btn btn-secondary" onclick="document.getElementById('audioInput').click()">
+                                Choose Audio File
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="audio-info" id="audioInfo" style="display: none;">
+                        <div class="audio-file-info">
+                            <h4>📁 <span id="audioFileName">No file selected</span></h4>
+                            <p>Size: <span id="audioFileSize">0 MB</span></p>
+                            <div class="audio-controls" id="audioControls"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="audio-settings">
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="audioEnabled" disabled> 
+                            Enable Audio Reactive Zoom
+                        </label>
+                    </div>
+                    
+                    <div class="controls-grid audio-controls">
+                        <div class="control-group">
+                            <label for="audioReactiveIntensity">Reactive Intensity</label>
+                            <input type="range" id="audioReactiveIntensity" min="0.5" max="5" value="2" step="0.1" disabled>
+                            <span class="value-display" id="audioIntensityValue">2.0x</span>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="audioFreqMin">Min Frequency</label>
+                            <input type="range" id="audioFreqMin" min="20" max="500" value="60" step="10" disabled>
+                            <span class="value-display" id="audioFreqMinValue">60Hz</span>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="audioFreqMax">Max Frequency</label>
+                            <input type="range" id="audioFreqMax" min="100" max="1000" value="250" step="10" disabled>
+                            <span class="value-display" id="audioFreqMaxValue">250Hz</span>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="audioVolume">Audio Volume</label>
+                            <input type="range" id="audioVolume" min="0" max="1" value="0.7" step="0.1" disabled>
+                            <span class="value-display" id="audioVolumeValue">70%</span>
+                        </div>
                     </div>
                 </div>
             </section>

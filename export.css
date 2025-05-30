@@ -162,6 +162,52 @@
     margin-top: 0.5rem;
 }
 
+/* Audio Export Styles */
+.audio-export-info {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.audio-export-info h4 {
+    color: #10b981;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.audio-export-info p {
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.audio-export-info strong {
+    color: #10b981;
+}
+
+/* Enhanced progress display for audio exports */
+.progress-container {
+    margin-top: 1rem;
+}
+
+.progress-container #progressText {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+/* Option group disabled state for audio mode */
+.option-group[style*="opacity"] {
+    pointer-events: none;
+}
+
+.option-group[style*="opacity"] input {
+    cursor: not-allowed;
+}
+
 /* Responsive modal */
 @media (max-width: 768px) {
     .modal-content {
