@@ -1,5 +1,6 @@
 // Zoom Quilt Generator - Main JavaScript File
-class ZoomQuiltGenerator {    constructor() {
+class ZoomQuiltGenerator {
+    constructor() {
         this.images = [];
         this.animationId = null;
         this.isPlaying = false;
@@ -11,7 +12,7 @@ class ZoomQuiltGenerator {    constructor() {
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
-        
+
         this.init();
     }
 
@@ -25,11 +26,11 @@ class ZoomQuiltGenerator {    constructor() {
     setupCanvas() {
         this.canvas = document.getElementById('zoomCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
+
         // Set canvas size
         this.canvas.width = 800;
         this.canvas.height = 600;
-        
+
         // Fill with black background
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -70,7 +71,7 @@ class ZoomQuiltGenerator {    constructor() {
 
     setupDragAndDrop() {
         const uploadArea = document.getElementById('uploadArea');
-        
+
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadArea.addEventListener(eventName, this.preventDefaults, false);
             document.body.addEventListener(eventName, this.preventDefaults, false);
@@ -104,11 +105,11 @@ class ZoomQuiltGenerator {    constructor() {
 
     async handleFiles(files) {
         const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-        
+
         for (const file of imageFiles) {
             await this.loadImage(file);
         }
-        
+
         this.updateImageList();
         this.updateButtons();
     }
@@ -142,7 +143,7 @@ class ZoomQuiltGenerator {    constructor() {
 
     updateImageList() {
         const imageList = document.getElementById('imageList');
-        
+
         if (this.images.length === 0) {
             imageList.innerHTML = `
                 <div class="empty-state">
@@ -187,10 +188,10 @@ class ZoomQuiltGenerator {    constructor() {
                 e.target.classList.remove('dragging');
                 draggedElement = null;
             }
-        });        imageList.addEventListener('dragover', (e) => {
+        }); imageList.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-            
+
             if (draggedElement) {
                 const afterElement = this.getDragAfterElement(imageList, e.clientY);
                 if (afterElement == null) {
@@ -209,11 +210,11 @@ class ZoomQuiltGenerator {    constructor() {
 
     getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.image-item:not(.dragging)')];
-        
+
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
-            
+
             if (offset < 0 && offset > closest.offset) {
                 return { offset: offset, element: child };
             } else {
@@ -225,7 +226,7 @@ class ZoomQuiltGenerator {    constructor() {
     reorderImages() {
         const imageElements = document.querySelectorAll('.image-item');
         const newOrder = [];
-        
+
         imageElements.forEach(element => {
             const id = element.dataset.id;
             const image = this.images.find(img => img.id == id);
@@ -233,7 +234,7 @@ class ZoomQuiltGenerator {    constructor() {
                 newOrder.push(image);
             }
         });
-        
+
         this.images = newOrder;
         this.updateImageList();
     }
@@ -269,122 +270,125 @@ class ZoomQuiltGenerator {    constructor() {
 
         // Prepare images for rendering
         this.loadedImages = await this.prepareImages();
-        
+
         // Start the animation
         this.startAnimation();
-        
+
         // Enable download button
         document.getElementById('downloadBtn').disabled = false;
-    }    async prepareImages() {
+    } async prepareImages() {
         const loadedImages = [];
-        
+
         for (const imageData of this.images) {
             // Create canvas for each image with fade effect
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Set canvas size to match the main canvas
             canvas.width = this.canvas.width;
             canvas.height = this.canvas.height;
-            
+
             // Calculate image scaling to cover the entire canvas (like CSS background-size: cover)
             const scaleX = canvas.width / imageData.width;
             const scaleY = canvas.height / imageData.height;
             const scale = Math.max(scaleX, scaleY); // Use max to cover entire canvas
-            
+
             const scaledWidth = imageData.width * scale;
             const scaledHeight = imageData.height * scale;
             const x = (canvas.width - scaledWidth) / 2;
             const y = (canvas.height - scaledHeight) / 2;
-            
+
             // Fill canvas with black first
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Enable high-quality image smoothing
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            
+
             // Draw the image to cover the entire canvas
             ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
-            
+
             // Apply fade effect to edges
             this.applyFadeEffect(ctx, canvas.width, canvas.height);
-            
+
             loadedImages.push({
                 canvas: canvas,
                 ctx: ctx,
                 originalData: imageData
             });
         }
-        
+
         return loadedImages;
-    }    applyFadeEffect(ctx, width, height) {
+    } applyFadeEffect(ctx, width, height) {
         if (this.fadeIntensity === 0) return;
-        
+
         // Create a more sophisticated fade effect
         const fadeSize = (this.fadeIntensity / 100) * Math.min(width, height) * 0.2;
-        
+
         // Create multiple gradients for edge fading
         const gradients = [];
-        
+
         // Top fade
         const topGradient = ctx.createLinearGradient(0, 0, 0, fadeSize);
         topGradient.addColorStop(0, 'rgba(0,0,0,1)');
         topGradient.addColorStop(1, 'rgba(0,0,0,0)');
-        
+
         // Bottom fade
         const bottomGradient = ctx.createLinearGradient(0, height - fadeSize, 0, height);
         bottomGradient.addColorStop(0, 'rgba(0,0,0,0)');
         bottomGradient.addColorStop(1, 'rgba(0,0,0,1)');
-        
+
         // Left fade
         const leftGradient = ctx.createLinearGradient(0, 0, fadeSize, 0);
         leftGradient.addColorStop(0, 'rgba(0,0,0,1)');
         leftGradient.addColorStop(1, 'rgba(0,0,0,0)');
-        
+
         // Right fade
         const rightGradient = ctx.createLinearGradient(width - fadeSize, 0, width, 0);
         rightGradient.addColorStop(0, 'rgba(0,0,0,0)');
         rightGradient.addColorStop(1, 'rgba(0,0,0,1)');
-        
+
         // Apply fade effects
         ctx.globalCompositeOperation = 'destination-out';
-        
+
         // Top
         ctx.fillStyle = topGradient;
         ctx.fillRect(0, 0, width, fadeSize);
-        
+
         // Bottom
         ctx.fillStyle = bottomGradient;
         ctx.fillRect(0, height - fadeSize, width, fadeSize);
-        
+
         // Left
         ctx.fillStyle = leftGradient;
         ctx.fillRect(0, 0, fadeSize, height);
-        
+
         // Right
         ctx.fillStyle = rightGradient;
         ctx.fillRect(width - fadeSize, 0, fadeSize, height);
-        
+
         ctx.globalCompositeOperation = 'source-over';
-    }startAnimation() {
+    } startAnimation() {
         this.isPlaying = true;
         this.zoomLevel = 0; // Start from 0 for logarithmic zoom
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
-        this.animate();}    animate() {
+        this.animate();
+    } animate() {
         if (!this.isPlaying) return;
-        
+
         if (this.loadedImages.length === 0) return;
-        
+
         // Continuous zoom increment - this creates smooth infinite zoom
         this.zoomLevel += 0.005 * this.zoomSpeed;
-        
+
         // Draw the zoom quilt frame
         this.drawZoomQuiltFrame();
-        
+
         this.animationId = requestAnimationFrame(() => this.animate());
-    }drawZoomQuiltFrame() {
+    }
+
+    drawZoomQuiltFrame() {
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
         
@@ -404,18 +408,24 @@ class ZoomQuiltGenerator {    constructor() {
         // The main zoom factor for the current base image
         const baseZoom = Math.exp(cycleProgress * cycleLength);
         
-        // Draw multiple nested layers
-        for (let layer = 0; layer < this.loadedImages.length + 2; layer++) {
+        // Extended layer range - draw from larger background images to smaller foreground ones
+        // Start from negative layers to include much larger background images
+        const totalLayers = this.loadedImages.length + 6; // Increased buffer for smoother transitions
+        
+        // Draw layers from largest to smallest (background to foreground)
+        for (let layer = -3; layer < totalLayers; layer++) {
             // Calculate which image to use for this layer
-            const imageIndex = (baseImageIndex + layer) % this.loadedImages.length;
+            // Handle negative indices properly
+            const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
             const imageCanvas = this.loadedImages[imageIndex].canvas;
             
             // Calculate the scale for this layer
             // Each layer is smaller by the scale ratio
             const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            // Skip if too small to see
-            if (layerScale < 0.001) continue;
+            // Keep drawing large images even when they're much bigger than the canvas
+            // This ensures smooth transitions as images grow beyond screen bounds
+            if (layerScale < 0.001 || layerScale > 12) continue; // Extended upper limit
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
@@ -440,7 +450,7 @@ class ZoomQuiltGenerator {    constructor() {
 
     previewZoomQuilt() {
         if (this.images.length === 0) return;
-        
+
         // Generate a single frame preview
         this.generateZoomQuilt();
     }
@@ -465,15 +475,15 @@ class ZoomQuiltGenerator {    constructor() {
         this.isPlaying = true;
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
         this.animate();
-    }    resetAnimation() {
+    } resetAnimation() {
         this.pauseAnimation();
         this.zoomLevel = 0; // Reset to 0 for logarithmic zoom
-        
+
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         if (this.loadedImages.length > 0) {
             this.drawZoomQuiltFrame();
         }
@@ -487,11 +497,11 @@ class ZoomQuiltGenerator {    constructor() {
         const frames = [];
         const frameCount = 60; // Number of frames for the loop
         const originalZoom = this.zoomLevel;
-        
+
         // Disable animation while capturing
         const wasPlaying = this.isPlaying;
         this.pauseAnimation();
-        
+
         // Capture frames
         for (let i = 0; i < frameCount; i++) {
             this.zoomLevel = (i / frameCount) * Math.log(1 / this.scaleRatio);
@@ -499,17 +509,17 @@ class ZoomQuiltGenerator {    constructor() {
             this.ctx.fillStyle = '#000000';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.drawZoomQuiltFrame();
-            
+
             // Capture frame as data URL
             frames.push(this.canvas.toDataURL('image/png'));
         }
-        
+
         // Restore original state
         this.zoomLevel = originalZoom;
         if (wasPlaying) {
             this.resumeAnimation();
         }
-        
+
         // Create a zip file with all frames
         this.downloadFrames(frames);
     }
@@ -521,7 +531,7 @@ class ZoomQuiltGenerator {    constructor() {
         link.download = 'zoom-quilt-frame.png';
         link.href = frames[0];
         link.click();
-        
+
         // Show info about additional frames
         alert(`Captured ${frames.length} frames! In a full implementation, these would be packaged as an animated GIF or video file.`);
     }
