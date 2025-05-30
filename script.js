@@ -5,10 +5,10 @@ class ZoomQuiltGenerator {
         this.animationId = null;
         this.isPlaying = false;
         this.zoomLevel = 0;
-        this.zoomSpeed = 1;
+        this.zoomSpeed = 0.5;
         this.blendMode = 'normal';
-        this.fadeIntensity = 20;
-        this.scaleRatio = 0.5;
+        this.fadeIntensity = 100;
+        this.scaleRatio = 0.1;
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
@@ -22,9 +22,34 @@ class ZoomQuiltGenerator {
         this.audioSource = null;
         this.audioEnabled = false;
         this.audioReactiveIntensity = 2.0;
-        this.audioFreqMin = 60;  // Hz
-        this.audioFreqMax = 250; // Hz
+        this.audioFreqMin = 60;
+        this.audioFreqMax = 250;
         this.baseZoomSpeed = 1.0;
+
+        // Visualizer properties
+        this.visualizers = {
+            circular: {
+                enabled: false,
+                mode: 'rings', // 'rings', 'spline', 'same-radius'
+                ringCount: 3,
+                pointCount: 16, // For same-radius and spline modes
+                baseSize: 100,
+                thickness: 3,
+                sensitivity: 2.0,
+                freqMin: 60, // For spline and same-radius modes
+                freqMax: 800, // For spline and same-radius modes
+                colors: ['#667eea', '#764ba2', '#10b981']
+            },
+            bar: {
+                enabled: false,
+                count: 64,
+                maxHeight: 150,
+                width: 4,
+                sensitivity: 2.0,
+                gradientStart: '#667eea',
+                gradientEnd: '#764ba2'
+            }
+        };
 
         this.init();
     }
@@ -36,6 +61,263 @@ class ZoomQuiltGenerator {
         this.setupDragAndDrop();
         this.updateControlValues();
         this.setupAudio();
+        this.setupTabs();
+        this.setupVisualizerControls();
+    }
+
+    setupTabs() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+                
+                // Remove active class from all tabs and panes
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding pane
+                btn.classList.add('active');
+                document.getElementById(`tab-${targetTab}`).classList.add('active');
+            });
+        });
+    }
+
+    setupVisualizerControls() {
+        // Circular visualizer controls
+        const circularEnabledCheckbox = document.getElementById('circularVisualizerEnabled');
+        if (circularEnabledCheckbox) {
+            circularEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.circular.enabled = e.target.checked;
+                this.updateVisualizerControls('circular');
+            });
+        }
+
+        // Circular visualizer mode - Fix dropdown interaction
+        const circularModeSelect = document.getElementById('circularMode');
+        if (circularModeSelect) {
+            // Remove any existing event listeners first
+            circularModeSelect.removeEventListener('change', this.handleCircularModeChange);
+            
+            // Add event listener with proper binding
+            this.handleCircularModeChange = (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                this.visualizers.circular.mode = e.target.value;
+                this.updateCircularModeVisibility();
+                this.updateCircularColorPickers();
+            };
+            
+            circularModeSelect.addEventListener('change', this.handleCircularModeChange);
+            
+            // Also handle click events to ensure dropdown works
+            circularModeSelect.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            
+            // Ensure the dropdown is not disabled
+            circularModeSelect.disabled = false;
+        }
+
+        // Add similar fixes for other circular controls
+        const circularControls = [
+            'circularRingCount',
+            'circularPointCount', 
+            'circularSize',
+            'circularThickness',
+            'circularSensitivity',
+            'circularFreqMin',
+            'circularFreqMax'
+        ];
+
+        circularControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    e.stopPropagation();
+                    const value = controlId.includes('Sensitivity') ? parseFloat(e.target.value) : parseInt(e.target.value);
+                    
+                    // Update the corresponding property
+                    switch(controlId) {
+                        case 'circularRingCount':
+                            this.visualizers.circular.ringCount = value;
+                            document.getElementById('circularRingCountValue').textContent = value;
+                            this.updateCircularColorPickers();
+                            break;
+                        case 'circularPointCount':
+                            this.visualizers.circular.pointCount = value;
+                            document.getElementById('circularPointCountValue').textContent = value;
+                            this.updateCircularColorPickers();
+                            break;
+                        case 'circularSize':
+                            this.visualizers.circular.baseSize = value;
+                            document.getElementById('circularSizeValue').textContent = `${value}px`;
+                            break;
+                        case 'circularThickness':
+                            this.visualizers.circular.thickness = value;
+                            document.getElementById('circularThicknessValue').textContent = `${value}px`;
+                            break;
+                        case 'circularSensitivity':
+                            this.visualizers.circular.sensitivity = value;
+                            document.getElementById('circularSensitivityValue').textContent = `${value}x`;
+                            break;
+                        case 'circularFreqMin':
+                            this.visualizers.circular.freqMin = value;
+                            document.getElementById('circularFreqMinValue').textContent = `${value}Hz`;
+                            break;
+                        case 'circularFreqMax':
+                            this.visualizers.circular.freqMax = value;
+                            document.getElementById('circularFreqMaxValue').textContent = `${value}Hz`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        // Bar visualizer controls (existing code)
+        const barEnabledCheckbox = document.getElementById('barVisualizerEnabled');
+        if (barEnabledCheckbox) {
+            barEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.bar.enabled = e.target.checked;
+                this.updateVisualizerControls('bar');
+            });
+        }
+
+        const barControls = [
+            'barCount',
+            'barHeight',
+            'barWidth',
+            'barSensitivity'
+        ];
+
+        barControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    const value = controlId === 'barSensitivity' ? parseFloat(e.target.value) : parseInt(e.target.value);
+                    
+                    switch(controlId) {
+                        case 'barCount':
+                            this.visualizers.bar.count = value;
+                            document.getElementById('barCountValue').textContent = value;
+                            break;
+                        case 'barHeight':
+                            this.visualizers.bar.maxHeight = value;
+                            document.getElementById('barHeightValue').textContent = `${value}px`;
+                            break;
+                        case 'barWidth':
+                            this.visualizers.bar.width = value;
+                            document.getElementById('barWidthValue').textContent = `${value}px`;
+                            break;
+                        case 'barSensitivity':
+                            this.visualizers.bar.sensitivity = value;
+                            document.getElementById('barSensitivityValue').textContent = `${value}x`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        // Color picker event listeners
+        const barGradientStart = document.getElementById('barGradientStart');
+        const barGradientEnd = document.getElementById('barGradientEnd');
+        
+        if (barGradientStart) {
+            barGradientStart.addEventListener('change', (e) => {
+                this.visualizers.bar.gradientStart = e.target.value;
+            });
+        }
+        
+        if (barGradientEnd) {
+            barGradientEnd.addEventListener('change', (e) => {
+                this.visualizers.bar.gradientEnd = e.target.value;
+            });
+        }
+
+        // Initialize
+        this.updateCircularModeVisibility();
+        this.updateCircularColorPickers();
+    }
+
+    updateVisualizerControls(type) {
+        const controls = document.querySelector(`.${type}-controls`);
+        if (controls) {
+            const inputs = controls.querySelectorAll('input:not([type="checkbox"]), select');
+            
+            inputs.forEach(input => {
+                // Don't disable the mode selector for circular visualizer
+                if (type === 'circular' && input.id === 'circularMode') {
+                    input.disabled = false;
+                } else {
+                    input.disabled = !this.visualizers[type].enabled;
+                }
+            });
+        }
+    }
+
+    updateCircularModeVisibility() {
+        const mode = this.visualizers.circular.mode;
+        const ringCountGroup = document.getElementById('circularRingCountGroup');
+        const pointCountGroup = document.getElementById('circularPointCountGroup');
+        const freqRangeGroup = document.getElementById('circularFreqRangeGroup');
+        const freqMaxGroup = document.getElementById('circularFreqMaxGroup');
+
+        // Show/hide controls based on mode
+        if (mode === 'rings') {
+            ringCountGroup.style.display = 'block';
+            pointCountGroup.style.display = 'none';
+            freqRangeGroup.style.display = 'none';
+            freqMaxGroup.style.display = 'none';
+        } else if (mode === 'spline' || mode === 'same-radius') {
+            ringCountGroup.style.display = 'none';
+            pointCountGroup.style.display = 'block';
+            freqRangeGroup.style.display = 'block';
+            freqMaxGroup.style.display = 'block';
+        }
+    }
+
+    updateCircularColorPickers() {
+        const container = document.getElementById('circularColorPickers');
+        const mode = this.visualizers.circular.mode;
+        let colorCount;
+
+        if (mode === 'rings') {
+            colorCount = this.visualizers.circular.ringCount;
+        } else {
+            colorCount = Math.min(this.visualizers.circular.pointCount, 8); // Limit colors for performance
+        }
+        
+        container.innerHTML = '';
+        
+        for (let i = 0; i < colorCount; i++) {
+            const colorItem = document.createElement('div');
+            colorItem.className = 'color-picker-item';
+            
+            const label = document.createElement('label');
+            label.textContent = mode === 'rings' ? `Ring ${i + 1}` : `Color ${i + 1}`;
+            
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.value = this.visualizers.circular.colors[i] || this.generateRandomColor();
+            colorInput.disabled = !this.visualizers.circular.enabled;
+            
+            colorInput.addEventListener('change', (e) => {
+                if (!this.visualizers.circular.colors[i]) {
+                    this.visualizers.circular.colors[i] = e.target.value;
+                } else {
+                    this.visualizers.circular.colors[i] = e.target.value;
+                }
+            });
+            
+            colorItem.appendChild(colorInput);
+            colorItem.appendChild(label);
+            container.appendChild(colorItem);
+        }
+    }
+
+    generateRandomColor() {
+        const colors = ['#667eea', '#764ba2', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     setupCanvas() {
@@ -269,6 +551,7 @@ class ZoomQuiltGenerator {
 
     resizeCanvasForFullscreen() {
         const canvas = this.canvas;
+        const canvasContainer = document.querySelector('.canvas-container');
         
         // Store original dimensions
         if (!this.originalCanvasWidth) {
@@ -276,30 +559,44 @@ class ZoomQuiltGenerator {
             this.originalCanvasHeight = canvas.height;
         }
         
-        // Get screen dimensions
-        const screenWidth = screen.width;
-        const screenHeight = screen.height;
+        // Get actual viewport dimensions (not screen dimensions)
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         
         // Calculate the canvas aspect ratio
         const canvasAspectRatio = this.originalCanvasWidth / this.originalCanvasHeight;
-        const screenAspectRatio = screenWidth / screenHeight;
+        const viewportAspectRatio = viewportWidth / viewportHeight;
         
         let newWidth, newHeight;
         
-        // Fill the screen (cover mode) - scale to fill entire screen
-        if (canvasAspectRatio > screenAspectRatio) {
-            // Canvas is wider than screen ratio - fit to height
-            newHeight = screenHeight;
-            newWidth = screenHeight * canvasAspectRatio;
+        // Fit canvas to viewport while maintaining aspect ratio (contain mode for better centering)
+        if (canvasAspectRatio > viewportAspectRatio) {
+            // Canvas is wider than viewport ratio - fit to width
+            newWidth = viewportWidth;
+            newHeight = viewportWidth / canvasAspectRatio;
         } else {
-            // Canvas is taller than screen ratio - fit to width
-            newWidth = screenWidth;
-            newHeight = screenWidth / canvasAspectRatio;
+            // Canvas is taller than viewport ratio - fit to height
+            newHeight = viewportHeight;
+            newWidth = viewportHeight * canvasAspectRatio;
         }
         
         // Update canvas size
         canvas.width = Math.round(newWidth);
         canvas.height = Math.round(newHeight);
+        
+        // Center the canvas using CSS
+        canvas.style.position = 'fixed';
+        canvas.style.top = '50%';
+        canvas.style.left = '50%';
+        canvas.style.transform = 'translate(-50%, -50%)';
+        canvas.style.zIndex = '1000';
+        
+        // Ensure container takes full viewport
+        canvasContainer.style.width = '100vw';
+        canvasContainer.style.height = '100vh';
+        canvasContainer.style.display = 'flex';
+        canvasContainer.style.alignItems = 'center';
+        canvasContainer.style.justifyContent = 'center';
         
         // Regenerate images for new canvas size if we have any
         if (this.images.length > 0) {
@@ -315,11 +612,26 @@ class ZoomQuiltGenerator {
 
     restoreCanvasSize() {
         const canvas = this.canvas;
+        const canvasContainer = document.querySelector('.canvas-container');
         
         // Restore original dimensions
         if (this.originalCanvasWidth && this.originalCanvasHeight) {
             canvas.width = this.originalCanvasWidth;
             canvas.height = this.originalCanvasHeight;
+            
+            // Reset canvas styling
+            canvas.style.position = '';
+            canvas.style.top = '';
+            canvas.style.left = '';
+            canvas.style.transform = '';
+            canvas.style.zIndex = '';
+            
+            // Reset container styling
+            canvasContainer.style.width = '';
+            canvasContainer.style.height = '';
+            canvasContainer.style.display = '';
+            canvasContainer.style.alignItems = '';
+            canvasContainer.style.justifyContent = '';
             
             // Regenerate images for original canvas size
             if (this.images.length > 0) {
@@ -538,6 +850,19 @@ class ZoomQuiltGenerator {
         const hasImages = this.images.length > 0;
         document.getElementById('generateBtn').disabled = !hasImages;
         document.getElementById('previewBtn').disabled = !hasImages;
+        document.getElementById('downloadBtn').disabled = !hasImages;
+        
+        // Update export status text
+        const statusText = document.getElementById('exportStatusText');
+        if (hasImages) {
+            if (this.loadedImages.length > 0) {
+                statusText.textContent = 'Ready to export! Click the button below.';
+            } else {
+                statusText.textContent = 'Generate the zoom quilt first, then export.';
+            }
+        } else {
+            statusText.textContent = 'Add some images to get started.';
+        }
     }
 
     updateControlValues() {
@@ -706,7 +1031,231 @@ class ZoomQuiltGenerator {
         // Draw the zoom quilt frame
         this.drawZoomQuiltFrame();
 
+        // Draw visualizers
+        this.drawVisualizers();
+
         this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    drawVisualizers() {
+        if (!this.audioEnabled || !this.analyser || !this.dataArray) return;
+
+        // Get audio data
+        this.analyser.getByteFrequencyData(this.dataArray);
+
+        // Draw circular visualizer
+        if (this.visualizers.circular.enabled) {
+            this.drawCircularVisualizer();
+        }
+
+        // Draw bar visualizer
+        if (this.visualizers.bar.enabled) {
+            this.drawBarVisualizer();
+        }
+    }
+
+    drawCircularVisualizer() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const config = this.visualizers.circular;
+        
+        // Calculate scale factor based on canvas size vs original size
+        const scaleFactor = Math.min(this.canvas.width / 800, this.canvas.height / 600);
+        const scaledConfig = {
+            ...config,
+            baseSize: config.baseSize * scaleFactor,
+            thickness: Math.max(1, config.thickness * scaleFactor)
+        };
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+
+        switch (config.mode) {
+            case 'rings':
+                this.drawConcentricRings(centerX, centerY, scaledConfig);
+                break;
+            case 'spline':
+                this.drawFrequencySpline(centerX, centerY, scaledConfig);
+                break;
+            case 'same-radius':
+                this.drawSameRadiusPoints(centerX, centerY, scaledConfig);
+                break;
+        }
+
+        this.ctx.restore();
+    }
+
+    drawConcentricRings(centerX, centerY, config) {
+        for (let ring = 0; ring < config.ringCount; ring++) {
+            // Calculate frequency range for this ring
+            const freqStart = Math.floor((ring / config.ringCount) * this.dataArray.length);
+            const freqEnd = Math.floor(((ring + 1) / config.ringCount) * this.dataArray.length);
+            
+            // Calculate average amplitude for this frequency range
+            let sum = 0;
+            for (let i = freqStart; i < freqEnd; i++) {
+                sum += this.dataArray[i];
+            }
+            const avgAmplitude = sum / (freqEnd - freqStart);
+            
+            // Calculate ring size based on amplitude (with scaling)
+            const amplitudeMultiplier = (avgAmplitude / 255) * config.sensitivity;
+            const ringSpacing = 30 * (config.baseSize / 100); // Scale ring spacing with base size
+            const ringSize = config.baseSize + (ring * ringSpacing) + (amplitudeMultiplier * 50 * (config.baseSize / 100));
+            
+            // Draw ring
+            this.ctx.strokeStyle = config.colors[ring] || '#667eea';
+            this.ctx.lineWidth = config.thickness;
+            this.ctx.globalAlpha = 0.7 + (amplitudeMultiplier * 0.3);
+            
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, ringSize, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+    }
+
+    drawFrequencySpline(centerX, centerY, config) {
+        // Create a smooth spline that reacts to frequencies
+        const radius = config.baseSize;
+        const angleStep = (Math.PI * 2) / config.pointCount;
+        
+        // Calculate frequency bin range
+        const sampleRate = this.audioContext ? this.audioContext.sampleRate : 44100;
+        const fftSize = this.analyser ? this.analyser.fftSize : 2048;
+        const binWidth = sampleRate / fftSize;
+        const minBin = Math.floor(config.freqMin / binWidth);
+        const maxBin = Math.floor(config.freqMax / binWidth);
+        
+        this.ctx.beginPath();
+        this.ctx.lineWidth = config.thickness;
+        
+        const points = [];
+        for (let i = 0; i < config.pointCount; i++) {
+            const angle = i * angleStep;
+            
+            // Map point to frequency range
+            const binIndex = Math.floor(minBin + (i / config.pointCount) * (maxBin - minBin));
+            const amplitude = this.dataArray && this.dataArray[binIndex] ? this.dataArray[binIndex] : 0;
+            const normalizedAmplitude = amplitude / 255;
+            
+            // Calculate radius with audio reactivity (scaled)
+            const reactiveOffset = normalizedAmplitude * config.sensitivity * 50 * (config.baseSize / 100);
+            const reactiveRadius = radius + reactiveOffset;
+            
+            const x = centerX + Math.cos(angle) * reactiveRadius;
+            const y = centerY + Math.sin(angle) * reactiveRadius;
+            
+            points.push({ x, y, amplitude: normalizedAmplitude });
+        }
+        
+        // Draw smooth spline
+        if (points.length > 0) {
+            this.ctx.strokeStyle = config.colors[0] || '#667eea';
+            this.ctx.globalAlpha = 0.8;
+            
+            this.ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 0; i < points.length; i++) {
+                const current = points[i];
+                const next = points[(i + 1) % points.length];
+                const controlX = (current.x + next.x) / 2;
+                const controlY = (current.y + next.y) / 2;
+                
+                this.ctx.quadraticCurveTo(current.x, current.y, controlX, controlY);
+            }
+            
+            this.ctx.closePath();
+            this.ctx.stroke();
+        }
+    }
+
+    drawSameRadiusPoints(centerX, centerY, config) {
+        const radius = config.baseSize;
+        const angleStep = (Math.PI * 2) / config.pointCount;
+        
+        // Calculate frequency bin range
+        const sampleRate = this.audioContext ? this.audioContext.sampleRate : 44100;
+        const fftSize = this.analyser ? this.analyser.fftSize : 2048;
+        const binWidth = sampleRate / fftSize;
+        const minBin = Math.floor(config.freqMin / binWidth);
+        const maxBin = Math.floor(config.freqMax / binWidth);
+        
+        for (let i = 0; i < config.pointCount; i++) {
+            const angle = i * angleStep;
+            
+            // Map point to frequency range
+            const binIndex = Math.floor(minBin + (i / config.pointCount) * (maxBin - minBin));
+            const amplitude = this.dataArray && this.dataArray[binIndex] ? this.dataArray[binIndex] : 0;
+            const normalizedAmplitude = amplitude / 255;
+            
+            // Base position on circle
+            const baseX = centerX + Math.cos(angle) * radius;
+            const baseY = centerY + Math.sin(angle) * radius;
+            
+            // Add reactive movement (scaled)
+            const reactiveOffset = normalizedAmplitude * config.sensitivity * 30 * (config.baseSize / 100);
+            const x = baseX + Math.cos(angle) * reactiveOffset;
+            const y = baseY + Math.sin(angle) * reactiveOffset;
+            
+            // Draw point (scaled size)
+            const colorIndex = i % config.colors.length;
+            const pointSize = config.thickness + (normalizedAmplitude * 5 * (config.baseSize / 100));
+            
+            this.ctx.fillStyle = config.colors[colorIndex] || '#667eea';
+            this.ctx.globalAlpha = 0.7 + (normalizedAmplitude * 0.3);
+            
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, pointSize, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Optional: draw line from center to point
+            this.ctx.strokeStyle = config.colors[colorIndex] || '#667eea';
+            this.ctx.lineWidth = Math.max(1, config.thickness * 0.5);
+            this.ctx.globalAlpha = 0.3 + (normalizedAmplitude * 0.4);
+            this.ctx.beginPath();
+            this.ctx.moveTo(baseX, baseY);
+            this.ctx.lineTo(x, y);
+            this.ctx.stroke();
+        }
+    }
+
+    drawBarVisualizer() {
+        const config = this.visualizers.bar;
+        const barWidth = this.canvas.width / config.count;
+        const canvasHeight = this.canvas.height;
+        
+        // Calculate scale factor for bar heights
+        const scaleFactor = this.canvas.height / 600;
+        const scaledMaxHeight = config.maxHeight * scaleFactor;
+        const scaledBarWidth = Math.max(1, config.width * Math.min(this.canvas.width / 800, 1));
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+
+        // Create gradient (scaled)
+        const gradient = this.ctx.createLinearGradient(0, canvasHeight, 0, canvasHeight - scaledMaxHeight);
+        gradient.addColorStop(0, config.gradientStart);
+        gradient.addColorStop(1, config.gradientEnd);
+
+        for (let i = 0; i < config.count; i++) {
+            // Map bar index to frequency data index
+            const dataIndex = Math.floor((i / config.count) * this.dataArray.length);
+            const amplitude = this.dataArray[dataIndex];
+            
+            // Calculate bar height (scaled)
+            const normalizedAmplitude = amplitude / 255;
+            const barHeight = normalizedAmplitude * scaledMaxHeight * config.sensitivity;
+            
+            // Draw bar (scaled positioning)
+            const x = i * barWidth + (barWidth - scaledBarWidth) / 2;
+            const y = canvasHeight - barHeight;
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.globalAlpha = 0.8;
+            this.ctx.fillRect(x, y, scaledBarWidth, barHeight);
+        }
+
+        this.ctx.restore();
     }
 
     drawZoomQuiltFrame() {
@@ -730,11 +1279,11 @@ class ZoomQuiltGenerator {
         const baseZoom = Math.exp(cycleProgress * cycleLength);
         
         // Extended layer range - draw from larger background images to smaller foreground ones
-        // Start from negative layers to include much larger background images
-        const totalLayers = this.loadedImages.length + 6; // Increased buffer for smoother transitions
+        // Increased buffer to prevent clipping of large images
+        const totalLayers = this.loadedImages.length + 8; // Increased buffer
         
         // Draw layers from largest to smallest (background to foreground)
-        for (let layer = -3; layer < totalLayers; layer++) {
+        for (let layer = -4; layer < totalLayers; layer++) { // Start from -4 instead of -3
             // Calculate which image to use for this layer
             // Handle negative indices properly
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
@@ -745,14 +1294,24 @@ class ZoomQuiltGenerator {
             const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
             // Keep drawing large images even when they're much bigger than the canvas
-            // This ensures smooth transitions as images grow beyond screen bounds
-            if (layerScale < 0.001 || layerScale > 12) continue; // Extended upper limit
+            // Extended range to prevent clipping - images should stay visible longer
+            if (layerScale < 0.0005 || layerScale > 20) continue; // Extended both limits
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
             const scaledHeight = this.canvas.height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
+            
+            // Only skip drawing if the image is completely outside the visible area
+            // Add a buffer zone to ensure smooth transitions
+            const buffer = Math.max(scaledWidth, scaledHeight) * 0.1; // 10% buffer
+            if (x + scaledWidth + buffer < 0 || 
+                y + scaledHeight + buffer < 0 || 
+                x - buffer > this.canvas.width || 
+                y - buffer > this.canvas.height) {
+                continue; // Skip if completely outside with buffer
+            }
             
             // Set blend mode for layering
             this.ctx.globalCompositeOperation = this.blendMode;
@@ -1353,19 +1912,28 @@ class ZoomQuiltGenerator {
         const baseImageIndex = Math.floor(currentCycle) % exportImages.length;
         const cycleProgress = currentCycle - Math.floor(currentCycle);
         const baseZoom = Math.exp(cycleProgress * cycleLength);
-        const totalLayers = exportImages.length + 6;
+        const totalLayers = exportImages.length + 8; // Increased buffer
         
-        for (let layer = -3; layer < totalLayers; layer++) {
+        for (let layer = -4; layer < totalLayers; layer++) { // Start from -4
             const imageIndex = ((baseImageIndex + layer) % exportImages.length + exportImages.length) % exportImages.length;
             const imageCanvas = exportImages[imageIndex].canvas;
             const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            if (layerScale < 0.001 || layerScale > 12) continue;
+            if (layerScale < 0.0005 || layerScale > 20) continue; // Extended range
             
             const scaledWidth = width * layerScale;
             const scaledHeight = height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
+            
+            // Add buffer zone for export too
+            const buffer = Math.max(scaledWidth, scaledHeight) * 0.1;
+            if (x + scaledWidth + buffer < 0 || 
+                y + scaledHeight + buffer < 0 || 
+                x - buffer > width || 
+                y - buffer > height) {
+                continue;
+            }
             
             ctx.globalCompositeOperation = this.blendMode;
             ctx.imageSmoothingEnabled = true;

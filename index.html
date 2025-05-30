@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="export.css">
     <link rel="stylesheet" href="audio.css">
+    <link rel="stylesheet" href="tabs.css">
 
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
@@ -18,87 +19,18 @@
         </header>
 
         <main>
-            <!-- Image Import Section -->
-            <section class="import-section">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-content">
-                        <div class="upload-icon">📁</div>
-                        <h3>Import Images</h3>
-                        <p>Drag and drop images here or click to browse</p>
-                        <input type="file" id="fileInput" accept="image/*" multiple hidden>
-                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                            Choose Files
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Image List Section -->
-            <section class="image-list-section">
-                <h2>Image Sequence</h2>
-                <div class="image-list" id="imageList">
-                    <div class="empty-state">
-                        <p>No images imported yet. Add some images to get started!</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Controls Section -->
-            <section class="controls-section">
-                <h2>Zoom Quilt Settings</h2>
-                <div class="controls-grid">
-                    <div class="control-group">
-                        <label for="zoomSpeed">Zoom Speed</label>
-                        <input type="range" id="zoomSpeed" min="0.5" max="5" value="1" step="0.1">
-                        <span class="value-display" id="zoomSpeedValue">1.0x</span>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="blendMode">Blend Mode</label>
-                        <select id="blendMode">
-                            <option value="normal">Normal</option>
-                            <option value="multiply">Multiply</option>
-                            <option value="screen">Screen</option>
-                            <option value="overlay">Overlay</option>
-                            <option value="soft-light">Soft Light</option>
-                            <option value="hard-light">Hard Light</option>
-                            <option value="color-dodge">Color Dodge</option>
-                            <option value="color-burn">Color Burn</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="fadeIntensity">Edge Fade Intensity</label>
-                        <input type="range" id="fadeIntensity" min="0" max="100" value="20" step="5">
-                        <span class="value-display" id="fadeIntensityValue">20%</span>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="scaleRatio">Scale Ratio</label>
-                        <input type="range" id="scaleRatio" min="0.3" max="0.8" value="0.5" step="0.05">
-                        <span class="value-display" id="scaleRatioValue">0.5</span>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-success" id="generateBtn" disabled>
-                        🎬 Generate Zoom Quilt
-                    </button>
-                    <button class="btn btn-secondary" id="previewBtn" disabled>
-                        👁️ Preview
-                    </button>
-                    <button class="btn btn-warning" id="downloadBtn" disabled>
-                        💾 Download Animation
-                    </button>
-                </div>
-            </section>
-
-            <!-- Canvas Section -->
+            <!-- Canvas Section (Now at top) -->
             <section class="canvas-section">
                 <h2>Zoom Quilt Preview</h2>
                 <div class="canvas-container">
                     <canvas id="zoomCanvas" width="800" height="600"></canvas>
                     <div class="canvas-controls">
+                        <button class="btn btn-success" id="generateBtn" disabled>
+                            🎬 Generate Zoom Quilt
+                        </button>
+                        <button class="btn btn-secondary" id="previewBtn" disabled>
+                            👁️ Preview
+                        </button>
                         <button class="btn btn-small" id="playPauseBtn">⏸️ Pause</button>
                         <button class="btn btn-small" id="resetBtn">🔄 Reset</button>
                         <button class="btn btn-small" id="fullscreenBtn" title="Enter Fullscreen">🗖 Fullscreen</button>
@@ -106,66 +38,314 @@
                 </div>
             </section>
 
-            <!-- Audio Section -->
-            <section class="audio-section">
-                <h2>🎵 Audio Integration</h2>
-                <div class="audio-upload">
-                    <div class="upload-area" style="padding: 1.5rem;">
-                        <div class="upload-content">
-                            <div class="upload-icon" style="font-size: 2rem;">🎵</div>
-                            <h3>Import Audio Track</h3>
-                            <p>Add music to create reactive zoom videos</p>
-                            <input type="file" id="audioInput" accept="audio/*" hidden>
-                            <button class="btn btn-secondary" onclick="document.getElementById('audioInput').click()">
-                                Choose Audio File
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="images">
+                    🖼️ Images
+                </button>
+                <button class="tab-btn" data-tab="audio">
+                    🎵 Audio
+                </button>
+                <button class="tab-btn" data-tab="visualizers">
+                    🌊 Visualizers
+                </button>
+                <button class="tab-btn" data-tab="export">
+                    🎬 Export
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Images Tab -->
+                <div class="tab-pane active" id="tab-images">
+
+                    <!-- Controls Section -->
+                    <section class="controls-section">
+                        <h2>Zoom Quilt Settings</h2>
+                        <div class="controls-grid">
+                            <div class="control-group">
+                                <label for="zoomSpeed">Zoom Speed</label>
+                                <input type="range" id="zoomSpeed" min="0.5" max="5" value="1" step="0.1">
+                                <span class="value-display" id="zoomSpeedValue">1.0x</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="blendMode">Blend Mode</label>
+                                <select id="blendMode">
+                                    <option value="normal">Normal</option>
+                                    <option value="multiply">Multiply</option>
+                                    <option value="screen">Screen</option>
+                                    <option value="overlay">Overlay</option>
+                                    <option value="soft-light">Soft Light</option>
+                                    <option value="hard-light">Hard Light</option>
+                                    <option value="color-dodge">Color Dodge</option>
+                                    <option value="color-burn">Color Burn</option>
+                                </select>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="fadeIntensity">Edge Fade Intensity</label>
+                                <input type="range" id="fadeIntensity" min="0" max="100" value="20" step="5">
+                                <span class="value-display" id="fadeIntensityValue">20%</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="scaleRatio">Scale Ratio</label>
+                                <input type="range" id="scaleRatio" min="0.3" max="0.8" value="0.5" step="0.05">
+                                <span class="value-display" id="scaleRatioValue">0.5</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    
+                    <!-- Image Import Section -->
+                    <section class="import-section">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-content">
+                                <div class="upload-icon">📁</div>
+                                <h3>Import Images</h3>
+                                <p>Drag and drop images here or click to browse</p>
+                                <input type="file" id="fileInput" accept="image/*" multiple hidden>
+                                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                    Choose Files
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Image List Section -->
+                    <section class="image-list-section">
+                        <h2>Image Sequence</h2>
+                        <div class="image-list" id="imageList">
+                            <div class="empty-state">
+                                <p>No images imported yet. Add some images to get started!</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Audio Tab -->
+                <div class="tab-pane" id="tab-audio">
+                    <section class="audio-section">
+                        <h2>🎵 Audio Integration</h2>
+                        <div class="audio-upload">
+                            <div class="upload-area" style="padding: 1.5rem;">
+                                <div class="upload-content">
+                                    <div class="upload-icon" style="font-size: 2rem;">🎵</div>
+                                    <h3>Import Audio Track</h3>
+                                    <p>Add music to create reactive zoom videos</p>
+                                    <input type="file" id="audioInput" accept="audio/*" hidden>
+                                    <button class="btn btn-secondary" onclick="document.getElementById('audioInput').click()">
+                                        Choose Audio File
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="audio-info" id="audioInfo" style="display: none;">
+                                <div class="audio-file-info">
+                                    <h4>📁 <span id="audioFileName">No file selected</span></h4>
+                                    <p>Size: <span id="audioFileSize">0 MB</span></p>
+                                    <div class="audio-controls" id="audioControls"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="audio-settings">
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="audioEnabled" disabled> 
+                                    Enable Audio Reactive Zoom
+                                </label>
+                            </div>
+                            
+                            <div class="controls-grid audio-controls">
+                                <div class="control-group">
+                                    <label for="audioReactiveIntensity">Reactive Intensity</label>
+                                    <input type="range" id="audioReactiveIntensity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                    <span class="value-display" id="audioIntensityValue">2.0x</span>
+                                </div>
+
+                                <div class="control-group">
+                                    <label for="audioFreqMin">Min Frequency</label>
+                                    <input type="range" id="audioFreqMin" min="20" max="500" value="60" step="10" disabled>
+                                    <span class="value-display" id="audioFreqMinValue">60Hz</span>
+                                </div>
+
+                                <div class="control-group">
+                                    <label for="audioFreqMax">Max Frequency</label>
+                                    <input type="range" id="audioFreqMax" min="100" max="1000" value="250" step="10" disabled>
+                                    <span class="value-display" id="audioFreqMaxValue">250Hz</span>
+                                </div>
+
+                                <div class="control-group">
+                                    <label for="audioVolume">Audio Volume</label>
+                                    <input type="range" id="audioVolume" min="0" max="1" value="0.7" step="0.1" disabled>
+                                    <span class="value-display" id="audioVolumeValue">70%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Visualizers Tab -->
+                <div class="tab-pane" id="tab-visualizers">
+                    <section class="visualizers-section">
+                        <h2>🌊 Audio Visualizers</h2>
+                        <p class="section-description">Add stunning visual effects that react to your audio</p>
+
+                        <div class="visualizer-types">
+                            <!-- Circular Visualizer -->
+                            <div class="visualizer-card">
+                                <div class="visualizer-header">
+                                    <h3>⭕ Circular Visualizer</h3>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="circularVisualizerEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <p>Multiple reactive circles at different frequencies</p>
+                                
+                                <div class="visualizer-controls circular-controls">
+                                    <div class="control-group">
+                                        <label for="circularMode">Visualizer Mode</label>
+                                        <select id="circularMode" disabled>
+                                            <option value="rings">Concentric Rings</option>
+                                            <option value="spline">Frequency Splines</option>
+                                            <option value="same-radius">Same Radius Points</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="control-group" id="circularRingCountGroup">
+                                        <label for="circularRingCount">Number of Rings</label>
+                                        <input type="range" id="circularRingCount" min="1" max="8" value="3" step="1" disabled>
+                                        <span class="value-display" id="circularRingCountValue">3</span>
+                                    </div>
+
+                                    <div class="control-group" id="circularPointCountGroup" style="display: none;">
+                                        <label for="circularPointCount">Number of Points</label>
+                                        <input type="range" id="circularPointCount" min="8" max="64" value="16" step="4" disabled>
+                                        <span class="value-display" id="circularPointCountValue">16</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="circularSize">Base Size</label>
+                                        <input type="range" id="circularSize" min="50" max="300" value="100" step="10" disabled>
+                                        <span class="value-display" id="circularSizeValue">100px</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="circularThickness">Line Thickness</label>
+                                        <input type="range" id="circularThickness" min="1" max="20" value="3" step="1" disabled>
+                                        <span class="value-display" id="circularThicknessValue">3px</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="circularSensitivity">Sensitivity</label>
+                                        <input type="range" id="circularSensitivity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                        <span class="value-display" id="circularSensitivityValue">2.0x</span>
+                                    </div>
+
+                                    <div class="control-group" id="circularFreqRangeGroup" style="display: none;">
+                                        <label for="circularFreqMin">Min Frequency</label>
+                                        <input type="range" id="circularFreqMin" min="20" max="500" value="60" step="10" disabled>
+                                        <span class="value-display" id="circularFreqMinValue">60Hz</span>
+                                    </div>
+
+                                    <div class="control-group" id="circularFreqMaxGroup" style="display: none;">
+                                        <label for="circularFreqMax">Max Frequency</label>
+                                        <input type="range" id="circularFreqMax" min="100" max="1000" value="800" step="10" disabled>
+                                        <span class="value-display" id="circularFreqMaxValue">800Hz</span>
+                                    </div>
+
+                                    <div class="control-group full-width">
+                                        <label>Colors</label>
+                                        <div class="color-picker-grid" id="circularColorPickers">
+                                            <!-- Color pickers will be generated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bar Visualizer -->
+                            <div class="visualizer-card">
+                                <div class="visualizer-header">
+                                    <h3>📊 Bar Visualizer</h3>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="barVisualizerEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <p>Frequency bars along the bottom edge</p>
+                                
+                                <div class="visualizer-controls bar-controls">
+                                    <div class="control-group">
+                                        <label for="barCount">Number of Bars</label>
+                                        <input type="range" id="barCount" min="16" max="128" value="64" step="8" disabled>
+                                        <span class="value-display" id="barCountValue">64</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="barHeight">Max Height</label>
+                                        <input type="range" id="barHeight" min="50" max="300" value="150" step="10" disabled>
+                                        <span class="value-display" id="barHeightValue">150px</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="barWidth">Bar Width</label>
+                                        <input type="range" id="barWidth" min="1" max="20" value="4" step="1" disabled>
+                                        <span class="value-display" id="barWidthValue">4px</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="barSensitivity">Sensitivity</label>
+                                        <input type="range" id="barSensitivity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                        <span class="value-display" id="barSensitivityValue">2.0x</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="barGradientStart">Gradient Start</label>
+                                        <input type="color" id="barGradientStart" value="#667eea" disabled>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="barGradientEnd">Gradient End</label>
+                                        <input type="color" id="barGradientEnd" value="#764ba2" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="visualizer-preview">
+                            <h3>Visualizer Preview</h3>
+                            <div class="preview-container">
+                                <canvas id="visualizerPreview" width="400" height="300"></canvas>
+                                <p class="preview-note">Preview shows when audio is playing</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Export Tab -->
+                <div class="tab-pane" id="tab-export">
+                    <section class="export-section">
+                        <h2>🎬 Export Settings</h2>
+                        <p class="section-description">Configure and download your zoom quilt animation</p>
+
+                        <div class="export-info-panel">
+                            <div class="export-status">
+                                <h3>Export Status</h3>
+                                <p id="exportStatusText">Ready to export when you have images loaded</p>
+                            </div>
+                        </div>
+
+                        <div class="export-actions">
+                            <button class="btn btn-warning btn-large" id="downloadBtn" disabled>
+                                💾 Export Animation
                             </button>
                         </div>
-                    </div>
-                    
-                    <div class="audio-info" id="audioInfo" style="display: none;">
-                        <div class="audio-file-info">
-                            <h4>📁 <span id="audioFileName">No file selected</span></h4>
-                            <p>Size: <span id="audioFileSize">0 MB</span></p>
-                            <div class="audio-controls" id="audioControls"></div>
-                        </div>
-                    </div>
+                    </section>
                 </div>
-
-                <div class="audio-settings">
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="audioEnabled" disabled> 
-                            Enable Audio Reactive Zoom
-                        </label>
-                    </div>
-                    
-                    <div class="controls-grid audio-controls">
-                        <div class="control-group">
-                            <label for="audioReactiveIntensity">Reactive Intensity</label>
-                            <input type="range" id="audioReactiveIntensity" min="0.5" max="5" value="2" step="0.1" disabled>
-                            <span class="value-display" id="audioIntensityValue">2.0x</span>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="audioFreqMin">Min Frequency</label>
-                            <input type="range" id="audioFreqMin" min="20" max="500" value="60" step="10" disabled>
-                            <span class="value-display" id="audioFreqMinValue">60Hz</span>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="audioFreqMax">Max Frequency</label>
-                            <input type="range" id="audioFreqMax" min="100" max="1000" value="250" step="10" disabled>
-                            <span class="value-display" id="audioFreqMaxValue">250Hz</span>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="audioVolume">Audio Volume</label>
-                            <input type="range" id="audioVolume" min="0" max="1" value="0.7" step="0.1" disabled>
-                            <span class="value-display" id="audioVolumeValue">70%</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
         </main>
     </div>
 

@@ -1,0 +1,331 @@
+/* Tab Navigation Styles */
+.tab-navigation {
+    display: flex;
+    background: rgba(16, 16, 30, 0.8);
+    border-radius: 15px 15px 0 0;
+    border: 1px solid #2a2a3e;
+    border-bottom: none;
+    padding: 0.5rem;
+    margin-bottom: 0;
+    overflow-x: auto;
+    backdrop-filter: blur(10px);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: fit-content;
+}
+
+.tab-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #f1f5f9;
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Tab Content */
+.tab-content {
+    background: rgba(26, 26, 46, 0.6);
+    border-radius: 0 0 15px 15px;
+    border: 1px solid #2a2a3e;
+    border-top: none;
+    backdrop-filter: blur(10px);
+    min-height: 400px;
+}
+
+.tab-pane {
+    display: none;
+    padding: 2rem;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* Section descriptions */
+.section-description {
+    color: #9ca3af;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Visualizer Styles */
+.visualizers-section {
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.visualizer-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.visualizer-card {
+    background: rgba(16, 16, 30, 0.6);
+    border-radius: 15px;
+    padding: 2rem;
+    border: 1px solid #374151;
+    transition: all 0.3s ease;
+}
+
+.visualizer-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.visualizer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.visualizer-header h3 {
+    color: #f1f5f9;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.visualizer-header p {
+    color: #9ca3af;
+    margin-bottom: 1.5rem;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #374151;
+    transition: 0.3s;
+    border-radius: 30px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(30px);
+}
+
+/* Visualizer Controls */
+.visualizer-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    transition: opacity 0.3s ease;
+}
+
+.visualizer-controls:has(input:disabled) {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Color Picker Grid */
+.color-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.color-picker-item label {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.color-picker-item input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #374151;
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+}
+
+.color-picker-item input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 6px;
+}
+
+.color-picker-item input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+/* Visualizer Preview */
+.visualizer-preview {
+    background: rgba(16, 16, 30, 0.6);
+    border-radius: 15px;
+    padding: 2rem;
+    border: 1px solid #374151;
+    text-align: center;
+}
+
+.visualizer-preview h3 {
+    color: #f1f5f9;
+    margin-bottom: 1rem;
+}
+
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+#visualizerPreview {
+    border-radius: 10px;
+    border: 2px solid #374151;
+    background: #000;
+    max-width: 100%;
+    height: auto;
+}
+
+.preview-note {
+    color: #9ca3af;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Export Tab Styles */
+.export-section {
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.export-info-panel {
+    background: rgba(16, 16, 30, 0.6);
+    border-radius: 15px;
+    padding: 2rem;
+    border: 1px solid #374151;
+    margin-bottom: 2rem;
+}
+
+.export-status h3 {
+    color: #f1f5f9;
+    margin-bottom: 1rem;
+}
+
+.export-status p {
+    color: #9ca3af;
+    font-size: 1.1rem;
+}
+
+.export-actions {
+    text-align: center;
+}
+
+.btn-large {
+    padding: 1.5rem 3rem;
+    font-size: 1.2rem;
+    border-radius: 12px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .tab-navigation {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .tab-btn {
+        justify-content: center;
+        padding: 0.75rem 1rem;
+    }
+    
+    .visualizer-types {
+        grid-template-columns: 1fr;
+    }
+    
+    .visualizer-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    .color-picker-grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
+}
+
+/* Animation for tab transitions */
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
