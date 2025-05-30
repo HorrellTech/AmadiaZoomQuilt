@@ -666,3 +666,185 @@ section h2 {
         padding: 1.5rem;
     }
 }
+
+/* Loading Indicator */
+.loading-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+}
+
+.loading-content {
+    background: rgba(26, 26, 46, 0.9);
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid #374151;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    min-width: 350px;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #374151;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-content h3 {
+    color: #f1f5f9;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.loading-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #374151;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.loading-progress-fill {
+    height: 100%;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.loading-text {
+    color: #9ca3af;
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    transition: all 0.3s ease;
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.notification-message {
+    flex: 1;
+}
+
+/* Enhanced fullscreen toolbar transitions */
+.canvas-container.fullscreen-active .canvas-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Cursor auto-hide in fullscreen */
+.canvas-container.fullscreen-active {
+    cursor: none;
+}
+
+.canvas-container.fullscreen-active:hover {
+    cursor: default;
+}
+
+/* Stack notifications properly */
+.notification:nth-child(n+2) {
+    top: calc(20px + (70px * var(--notification-index, 0)));
+}
+
+/* Mobile responsive loading */
+@media (max-width: 768px) {
+    .loading-content {
+        margin: 1rem;
+        padding: 2rem;
+        min-width: auto;
+        width: calc(100vw - 2rem);
+        max-width: 400px;
+    }
+    
+    .notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        width: auto;
+    }
+}
+
+/* Enhanced animation keyframes */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Loading indicator fade */
+.loading-indicator {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Improved fullscreen canvas positioning */
+.canvas-container.fullscreen-active #zoomCanvas {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
+}

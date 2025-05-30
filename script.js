@@ -51,6 +51,10 @@ class ZoomQuiltGenerator {
             }
         };
 
+        // Fullscreen toolbar auto-hide
+        this.fullscreenToolbarTimeout = null;
+        this.lastMouseActivity = Date.now();
+
         this.init();
     }
 
@@ -365,6 +369,17 @@ class ZoomQuiltGenerator {
         }
     }
 
+    restartAudio() {
+        if (this.audioElement) {
+            this.audioElement.currentTime = 0;
+            if (this.audioEnabled && this.audioElement.paused) {
+                this.audioElement.play().catch(error => {
+                    console.error('Failed to restart audio:', error);
+                });
+            }
+        }
+    }
+
     setupEventListeners() {
         // File input
         const fileInput = document.getElementById('fileInput');
@@ -432,6 +447,23 @@ class ZoomQuiltGenerator {
         document.getElementById('downloadBtn').addEventListener('click', () => this.downloadAnimation());
         document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
 
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (this.isFullscreen()) {
+                    // Restart audio in fullscreen mode
+                    this.restartAudio();
+                } else {
+                    // Normal play/pause behavior
+                    this.togglePlayPause();
+                }
+            }
+        });
+
+        // Fullscreen toolbar auto-hide
+        this.setupFullscreenToolbarAutoHide();
+
         // Listen for fullscreen changes
         document.addEventListener('fullscreenchange', () => this.updateFullscreenButton());
         document.addEventListener('webkitfullscreenchange', () => this.updateFullscreenButton());
@@ -465,6 +497,69 @@ class ZoomQuiltGenerator {
         uploadArea.addEventListener('drop', (e) => this.handleDrop(e), false);
     }
 
+    setupFullscreenToolbarAutoHide() {
+        // Mouse movement tracking for fullscreen
+        document.addEventListener('mousemove', (e) => {
+            if (this.isFullscreen()) {
+                this.handleMouseActivity();
+            }
+        });
+
+        // Click and touch tracking
+        document.addEventListener('click', (e) => {
+            if (this.isFullscreen()) {
+                this.handleMouseActivity();
+            }
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (this.isFullscreen()) {
+                this.handleMouseActivity();
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (this.isFullscreen()) {
+                this.handleMouseActivity();
+            }
+        });
+    }
+
+    handleMouseActivity() {
+        this.lastMouseActivity = Date.now();
+        this.showFullscreenToolbar();
+        
+        // Clear existing timeout
+        if (this.fullscreenToolbarTimeout) {
+            clearTimeout(this.fullscreenToolbarTimeout);
+        }
+        
+        // Set new timeout to hide toolbar after 2 seconds
+        this.fullscreenToolbarTimeout = setTimeout(() => {
+            this.hideFullscreenToolbar();
+        }, 2000);
+    }
+
+    showFullscreenToolbar() {
+        const toolbar = document.querySelector('.canvas-container.fullscreen-active .canvas-controls');
+        if (toolbar) {
+            toolbar.style.opacity = '1';
+            toolbar.style.transform = 'translateX(-50%) translateY(0)';
+            toolbar.style.pointerEvents = 'auto';
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    hideFullscreenToolbar() {
+        const toolbar = document.querySelector('.canvas-container.fullscreen-active .canvas-controls');
+        if (toolbar) {
+            toolbar.style.opacity = '0';
+            toolbar.style.transform = 'translateX(-50%) translateY(20px)';
+            toolbar.style.pointerEvents = 'none';
+            document.body.style.cursor = 'none';
+        }
+    }
+
     preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -481,14 +576,48 @@ class ZoomQuiltGenerator {
     }
 
     async handleFiles(files) {
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        // Filter for image files only
+        const imageFiles = Array.from(files).filter(file => {
+            return file.type.startsWith('image/') || 
+                /\.(jpg|jpeg|png|bmp|webp|svg)$/i.test(file.name);
+        });
 
-        for (const file of imageFiles) {
-            await this.loadImage(file);
+        if (imageFiles.length === 0) {
+            alert('No valid image files found. Please select image files (JPG, PNG, GIF, BMP, WebP, SVG).');
+            return;
         }
+
+        // Show non-image files warning if any were filtered out
+        const filteredOut = files.length - imageFiles.length;
+        if (filteredOut > 0) {
+            this.showNotification(`${filteredOut} non-image file(s) were filtered out.`, 'warning');
+        }
+
+        // Show loading indicator
+        this.showLoadingIndicator(imageFiles.length);
+
+        let loadedCount = 0;
+        for (const file of imageFiles) {
+            try {
+                await this.loadImage(file);
+                loadedCount++;
+                this.updateLoadingProgress(loadedCount, imageFiles.length);
+            } catch (error) {
+                console.error(`Failed to load image ${file.name}:`, error);
+                this.showNotification(`Failed to load image: ${file.name}`, 'error');
+            }
+        }
+
+        // Hide loading indicator
+        this.hideLoadingIndicator();
 
         this.updateImageList();
         this.updateButtons();
+
+        // Show success notification
+        if (loadedCount > 0) {
+            this.showNotification(`Successfully loaded ${loadedCount} image(s)!`, 'success');
+        }
     }
 
     toggleFullscreen() {
@@ -534,16 +663,48 @@ class ZoomQuiltGenerator {
 
     updateFullscreenButton() {
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const canvasContainer = document.querySelector('.canvas-container');
+        const toolbar = document.querySelector('.canvas-controls');
+        
         if (this.isFullscreen()) {
             fullscreenBtn.innerHTML = '🗗 Exit Fullscreen';
             fullscreenBtn.title = 'Exit Fullscreen';
-            document.querySelector('.canvas-container').classList.add('fullscreen-active');
+            canvasContainer.classList.add('fullscreen-active');
+            
+            // Initialize toolbar auto-hide
+            this.handleMouseActivity(); // Show toolbar initially
+            
             // Resize canvas to fill screen while maintaining aspect ratio
             this.resizeCanvasForFullscreen();
         } else {
             fullscreenBtn.innerHTML = '🗖 Fullscreen';
             fullscreenBtn.title = 'Enter Fullscreen';
-            document.querySelector('.canvas-container').classList.remove('fullscreen-active');
+            canvasContainer.classList.remove('fullscreen-active');
+            
+            // Clear auto-hide timeout
+            if (this.fullscreenToolbarTimeout) {
+                clearTimeout(this.fullscreenToolbarTimeout);
+                this.fullscreenToolbarTimeout = null;
+            }
+            
+            // Reset cursor
+            document.body.style.cursor = 'default';
+            
+            // Reset toolbar styles when exiting fullscreen
+            if (toolbar) {
+                toolbar.style.position = '';
+                toolbar.style.bottom = '';
+                toolbar.style.left = '';
+                toolbar.style.transform = '';
+                toolbar.style.zIndex = '';
+                toolbar.style.background = '';
+                toolbar.style.padding = '';
+                toolbar.style.borderRadius = '';
+                toolbar.style.backdropFilter = '';
+                toolbar.style.opacity = '';
+                toolbar.style.pointerEvents = '';
+            }
+            
             // Restore original canvas size
             this.restoreCanvasSize();
         }
@@ -2055,6 +2216,108 @@ class ZoomQuiltGenerator {
 
             // Show feedback
             this.showPresetAppliedFeedback(presetName);
+        }
+    }
+
+    showLoadingIndicator(totalFiles) {
+        // Remove existing indicator if any
+        this.hideLoadingIndicator();
+
+        const indicator = document.createElement('div');
+        indicator.id = 'loadingIndicator';
+        indicator.className = 'loading-indicator';
+        indicator.innerHTML = `
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h3>Loading Images...</h3>
+                <div class="loading-progress-bar">
+                    <div class="loading-progress-fill" id="loadingProgressFill"></div>
+                </div>
+                <p class="loading-text" id="loadingText">Preparing to load ${totalFiles} image(s)...</p>
+            </div>
+        `;
+
+        document.body.appendChild(indicator);
+    }
+
+    updateLoadingProgress(loaded, total) {
+        const progressFill = document.getElementById('loadingProgressFill');
+        const loadingText = document.getElementById('loadingText');
+        
+        if (progressFill && loadingText) {
+            const percentage = (loaded / total) * 100;
+            progressFill.style.width = `${percentage}%`;
+            loadingText.textContent = `Loading images... ${loaded}/${total} (${Math.round(percentage)}%)`;
+        }
+    }
+
+    hideLoadingIndicator() {
+        const indicator = document.getElementById('loadingIndicator');
+        if (indicator) {
+            indicator.style.opacity = '0';
+            setTimeout(() => {
+                if (indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }, 300);
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        let icon = '';
+        switch (type) {
+            case 'success': icon = '✓'; break;
+            case 'warning': icon = '⚠'; break;
+            case 'error': icon = '✕'; break;
+            default: icon = 'ℹ'; break;
+        }
+        
+        notification.innerHTML = `
+            <span class="notification-icon">${icon}</span>
+            <span class="notification-message">${message}</span>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${this.getNotificationColor(type)};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.3s ease-out forwards;
+            max-width: 350px;
+            word-wrap: break-word;
+        `;
+
+        document.body.appendChild(notification);
+
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
+    }
+
+    getNotificationColor(type) {
+        switch (type) {
+            case 'success': return 'linear-gradient(45deg, #10b981 0%, #059669 100%)';
+            case 'warning': return 'linear-gradient(45deg, #f59e0b 0%, #d97706 100%)';
+            case 'error': return 'linear-gradient(45deg, #ef4444 0%, #dc2626 100%)';
+            default: return 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)';
         }
     }
 
