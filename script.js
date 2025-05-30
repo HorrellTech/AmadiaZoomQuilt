@@ -74,6 +74,13 @@ class ZoomQuiltGenerator {
         document.addEventListener('webkitfullscreenchange', () => this.updateFullscreenButton());
         document.addEventListener('msfullscreenchange', () => this.updateFullscreenButton());
         document.addEventListener('mozfullscreenchange', () => this.updateFullscreenButton());
+        
+        // Listen for window resize while in fullscreen
+        window.addEventListener('resize', () => {
+            if (this.isFullscreen()) {
+                this.resizeCanvasForFullscreen();
+            }
+        });
     }
 
     setupDragAndDrop() {
@@ -168,10 +175,81 @@ class ZoomQuiltGenerator {
             fullscreenBtn.innerHTML = '🗗 Exit Fullscreen';
             fullscreenBtn.title = 'Exit Fullscreen';
             document.querySelector('.canvas-container').classList.add('fullscreen-active');
+            // Resize canvas to fill screen while maintaining aspect ratio
+            this.resizeCanvasForFullscreen();
         } else {
             fullscreenBtn.innerHTML = '🗖 Fullscreen';
             fullscreenBtn.title = 'Enter Fullscreen';
             document.querySelector('.canvas-container').classList.remove('fullscreen-active');
+            // Restore original canvas size
+            this.restoreCanvasSize();
+        }
+    }
+
+    resizeCanvasForFullscreen() {
+        const canvas = this.canvas;
+        
+        // Store original dimensions
+        if (!this.originalCanvasWidth) {
+            this.originalCanvasWidth = canvas.width;
+            this.originalCanvasHeight = canvas.height;
+        }
+        
+        // Get screen dimensions
+        const screenWidth = screen.width;
+        const screenHeight = screen.height;
+        
+        // Calculate the canvas aspect ratio
+        const canvasAspectRatio = this.originalCanvasWidth / this.originalCanvasHeight;
+        const screenAspectRatio = screenWidth / screenHeight;
+        
+        let newWidth, newHeight;
+        
+        // Fill the screen (cover mode) - scale to fill entire screen
+        if (canvasAspectRatio > screenAspectRatio) {
+            // Canvas is wider than screen ratio - fit to height
+            newHeight = screenHeight;
+            newWidth = screenHeight * canvasAspectRatio;
+        } else {
+            // Canvas is taller than screen ratio - fit to width
+            newWidth = screenWidth;
+            newHeight = screenWidth / canvasAspectRatio;
+        }
+        
+        // Update canvas size
+        canvas.width = Math.round(newWidth);
+        canvas.height = Math.round(newHeight);
+        
+        // Regenerate images for new canvas size if we have any
+        if (this.images.length > 0) {
+            this.prepareImages().then(loadedImages => {
+                this.loadedImages = loadedImages;
+                // Redraw current frame
+                if (this.loadedImages.length > 0) {
+                    this.drawZoomQuiltFrame();
+                }
+            });
+        }
+    }
+
+    restoreCanvasSize() {
+        const canvas = this.canvas;
+        
+        // Restore original dimensions
+        if (this.originalCanvasWidth && this.originalCanvasHeight) {
+            canvas.width = this.originalCanvasWidth;
+            canvas.height = this.originalCanvasHeight;
+            
+            // Regenerate images for original canvas size
+            if (this.images.length > 0) {
+                this.prepareImages().then(loadedImages => {
+                    this.loadedImages = loadedImages;
+                    // Redraw current frame
+                    if (this.loadedImages.length > 0) {
+                        this.drawZoomQuiltFrame();
+                    }
+                });
+            }
         }
     }
 

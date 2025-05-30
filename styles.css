@@ -448,15 +448,22 @@ section h2 {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
 }
 
 .canvas-container.fullscreen-active #zoomCanvas {
-    max-width: 95vw;
-    max-height: 85vh;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
 }
 
 .canvas-container.fullscreen-active .canvas-controls {
@@ -517,10 +524,5 @@ section h2 {
     .canvas-container.fullscreen-active .canvas-controls .btn {
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
-    }
-    
-    .canvas-container.fullscreen-active #zoomCanvas {
-        max-width: 98vw;
-        max-height: 80vh;
     }
 }
