@@ -1209,6 +1209,9 @@ class ZoomQuiltGenerator {
         
         const startTime = performance.now();
         
+        // Reset zoom level to start fresh for export
+        let exportZoomLevel = 0;
+        
         for (let frame = 0; frame < totalFrames; frame++) {
             // Update progress
             const progress = (frame / totalFrames) * 100;
@@ -1218,15 +1221,18 @@ class ZoomQuiltGenerator {
             const currentTime = frame * frameInterval;
             
             if (this.audioEnabled && this.audioFile && exportAudioElement) {
-                // Audio-reactive mode: calculate zoom based on time and simulated audio intensity
-                // For a more accurate implementation, you'd pre-analyze the audio file
+                // Audio-reactive mode: calculate zoom increment with simulated audio intensity
                 const baseIntensity = Math.sin(currentTime * 2) * 0.5 + 0.5; // Simulate audio intensity
                 const reactiveSpeed = this.baseZoomSpeed * (1 + (baseIntensity * this.audioReactiveIntensity));
-                this.zoomLevel = currentTime * 0.005 * reactiveSpeed;
+                // Accumulate zoom level like in live animation
+                exportZoomLevel += 0.005 * reactiveSpeed;
             } else {
-                // Standard mode: linear zoom progression
-                this.zoomLevel = currentTime * 0.005 * this.baseZoomSpeed;
+                // Standard mode: accumulate zoom level progressively
+                exportZoomLevel += 0.005 * this.baseZoomSpeed;
             }
+            
+            // Set the zoom level for rendering this frame
+            this.zoomLevel = exportZoomLevel;
             
             // Clear export canvas
             ctx.clearRect(0, 0, width, height);
