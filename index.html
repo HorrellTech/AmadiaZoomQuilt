@@ -83,11 +83,11 @@
                                 </select>
                             </div>
 
-                            <div class="control-group">
+                            <!--div class="control-group">
                                 <label for="fadeIntensity">Edge Fade Intensity</label>
                                 <input type="range" id="fadeIntensity" min="0" max="100" value="20" step="5">
                                 <span class="value-display" id="fadeIntensityValue">20%</span>
-                            </div>
+                            </div-->
 
                             <div class="control-group">
                                 <label for="scaleRatio">Scale Ratio</label>
@@ -122,6 +122,21 @@
                             <label for="shapeSize">Shape Size</label>
                             <input type="range" id="shapeSize" min="0.5" max="1.5" value="1.0" step="0.05">
                             <span class="value-display" id="shapeSizeValue">100%</span>
+                        </div>
+
+                        <!-- Grouped Fade/Blur Controls -->
+                        <div class="controls-grid fade-controls">
+                            <div class="control-group">
+                                <label for="fadeIntensity">Edge Fade Intensity</label>
+                                <input type="range" id="fadeIntensity" min="0" max="100" value="20" step="5">
+                                <span class="value-display" id="fadeIntensityValue">20%</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="shapeFeather">Edge Softness (Feather)</label>
+                                <input type="range" id="shapeFeather" min="0" max="50" value="20" step="2">
+                                <span class="value-display" id="shapeFeatherValue">20px</span>
+                            </div>
                         </div>
 
                         <!-- Shape Rotation Controls -->
@@ -169,10 +184,52 @@
                             <span class="value-display" id="randomRotationMaxValue">360°</span>
                         </div>
 
+                        <!-- Image Rotation Controls -->
                         <div class="control-group">
-                            <label for="shapeFeather">Edge Softness</label>
-                            <input type="range" id="shapeFeather" min="0" max="50" value="20" step="2">
-                            <span class="value-display" id="shapeFeatherValue">20px</span>
+                            <label>
+                                <input type="checkbox" id="imageRotationEnabled">
+                                Enable Image Content Rotation
+                            </label>
+                            <small>Rotates the actual image content (separate from shape cutout rotation)</small>
+                        </div>
+
+                        <div class="image-rotation-controls">
+                            <div class="control-group">
+                                <label for="imageRotationMode">Image Rotation Mode</label>
+                                <select id="imageRotationMode">
+                                    <option value="fixed">Fixed Rotation</option>
+                                    <option value="progressive">Progressive Rotation</option>
+                                    <option value="random">Random Rotation</option>
+                                </select>
+                            </div>
+
+                            <!-- Fixed image rotation -->
+                            <div class="control-group" id="imageRotationGroup">
+                                <label for="imageRotation">Base Image Rotation</label>
+                                <input type="range" id="imageRotation" min="0" max="360" value="0" step="1">
+                                <span class="value-display" id="imageRotationValue">0°</span>
+                            </div>
+
+                            <!-- Progressive image rotation -->
+                            <div class="control-group" id="imageProgressiveRotationGroup" style="display: none;">
+                                <label for="imageProgressiveRotationStep">Progressive Step</label>
+                                <input type="range" id="imageProgressiveRotationStep" min="1" max="90" value="10" step="1">
+                                <span class="value-display" id="imageProgressiveRotationStepValue">10°</span>
+                                <small>Image rotation increase per image</small>
+                            </div>
+
+                            <!-- Random image rotation -->
+                            <div class="control-group" id="imageRandomRotationGroup" style="display: none;">
+                                <label for="imageRandomRotationMin">Random Min</label>
+                                <input type="range" id="imageRandomRotationMin" min="0" max="360" value="0" step="1">
+                                <span class="value-display" id="imageRandomRotationMinValue">0°</span>
+                            </div>
+
+                            <div class="control-group" id="imageRandomRotationGroup2" style="display: none;">
+                                <label for="imageRandomRotationMax">Random Max</label>
+                                <input type="range" id="imageRandomRotationMax" min="0" max="360" value="360" step="1">
+                                <span class="value-display" id="imageRandomRotationMaxValue">360°</span>
+                            </div>
                         </div>
                     </section>
                     

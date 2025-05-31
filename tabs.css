@@ -329,3 +329,59 @@ input:checked + .toggle-slider:before {
         transform: translateY(0);
     }
 }
+
+/* Fade Controls Group */
+.fade-controls {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.fade-controls::before {
+    content: "🌫️ Fade & Blur Effects";
+    display: block;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+/* Image Rotation Controls Styling */
+.image-rotation-controls {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.02);
+    transition: opacity 0.3s ease;
+}
+
+.image-rotation-controls::before {
+    content: "🔄 Image Content Rotation";
+    display: block;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+/* Better checkbox styling for main toggles */
+.control-group label input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+.control-group small {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Visual separation for rotation groups */
+.control-group input[type="checkbox"] + small {
+    margin-left: 24px;
+}

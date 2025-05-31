@@ -1031,6 +1031,7 @@ class ZoomQuiltGenerator {
     updateRotationControls() {
         const progressiveGroup = document.getElementById('progressiveRotationGroup');
         const randomGroup = document.getElementById('randomRotationGroup');
+        const randomGroup2 = document.getElementById('randomRotationGroup2'); // Add this line
         const fixedGroup = document.getElementById('shapeRotationGroup');
         
         // Show/hide controls based on rotation mode and if shape rotation is enabled
@@ -1040,6 +1041,9 @@ class ZoomQuiltGenerator {
             (isEnabled && this.rotationMode === 'progressive') ? 'block' : 'none';
         
         if (randomGroup) randomGroup.style.display = 
+            (isEnabled && this.rotationMode === 'random') ? 'block' : 'none';
+        
+        if (randomGroup2) randomGroup2.style.display = 
             (isEnabled && this.rotationMode === 'random') ? 'block' : 'none';
         
         if (fixedGroup) fixedGroup.style.display = 
@@ -1066,6 +1070,7 @@ class ZoomQuiltGenerator {
         // Show/hide specific image rotation mode controls
         const imageProgressiveGroup = document.getElementById('imageProgressiveRotationGroup');
         const imageRandomGroup = document.getElementById('imageRandomRotationGroup');
+        const imageRandomGroup2 = document.getElementById('imageRandomRotationGroup2'); // Add this line
         const imageFixedGroup = document.getElementById('imageRotationGroup');
         
         const isEnabled = this.imageRotationEnabled;
@@ -1074,6 +1079,9 @@ class ZoomQuiltGenerator {
             (isEnabled && this.imageRotationMode === 'progressive') ? 'block' : 'none';
         
         if (imageRandomGroup) imageRandomGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
+        
+        if (imageRandomGroup2) imageRandomGroup2.style.display = 
             (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
         
         if (imageFixedGroup) imageFixedGroup.style.display = 
@@ -1911,7 +1919,7 @@ class ZoomQuiltGenerator {
             this.applyRectangleFadeIntensity(ctx, width, height);
         }
     }
-    
+
     applyAdditionalEdgeBlur(ctx, width, height, fadeSize) {
         // Create a temporary canvas for edge blur
         const tempCanvas = document.createElement('canvas');
