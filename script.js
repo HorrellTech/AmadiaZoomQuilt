@@ -6,6 +6,7 @@ class ZoomQuiltGenerator {
         this.isPlaying = false;
         this.zoomLevel = 0;
         this.zoomSpeed = 0.5;
+        this.zoomDirection = 1; // New: -1 to 1, controls zoom direction and speed multiplier
         this.blendMode = 'normal';
         this.fadeIntensity = 20;
         this.scaleRatio = 0.1;
@@ -13,6 +14,13 @@ class ZoomQuiltGenerator {
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
+        
+        // Canvas settings
+        this.canvasWidth = 800;
+        this.canvasHeight = 600;
+        this.aspectRatioLocked = true;
+        this.originalCanvasWidth = 800;
+        this.originalCanvasHeight = 600;
         
         // Audio properties
         this.audioFile = null;
