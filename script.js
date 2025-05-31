@@ -11,7 +11,6 @@ class ZoomQuiltGenerator {
         this.scaleRatio = 0.1;
         this.zoomOffset = 0; // New parallax offset setting
         this.canvas = null;
-        this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
         
@@ -32,6 +31,19 @@ class ZoomQuiltGenerator {
         this.shapeSize = 1.0; // Scale factor for shapes
         this.shapeRotation = 0; // Rotation angle for shapes
         this.shapeFeather = 20; // Feathering/softness of shape edges
+
+        // New rotation options
+        this.rotationMode = 'fixed'; // 'fixed', 'random', 'progressive'
+        this.progressiveRotationStep = 15; // degrees per image
+        this.randomRotationMin = 0; // minimum random rotation
+        this.randomRotationMax = 360; // maximum random rotation
+        this.imageRotationEnabled = false; // whether to rotate the image content
+        this.shapeRotationEnabled = true; // whether to rotate the shape cutout
+        this.imageRotationMode = 'fixed'; // 'fixed', 'random', 'progressive'
+        this.imageRotation = 0; // base image rotation
+        this.imageProgressiveRotationStep = 10; // degrees per image for image rotation
+        this.imageRandomRotationMin = 0;
+        this.imageRandomRotationMax = 360;
 
         // Visualizer properties
         this.visualizers = {
@@ -388,103 +400,273 @@ class ZoomQuiltGenerator {
     }
 
     setupEventListeners() {
-        // File input
+        // File input - add null check
         const fileInput = document.getElementById('fileInput');
-        fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        }
 
-        // Audio file input
+        // Audio file input - add null check
         const audioInput = document.getElementById('audioInput');
-        audioInput.addEventListener('change', (e) => this.handleAudioSelect(e));
+        if (audioInput) {
+            audioInput.addEventListener('change', (e) => this.handleAudioSelect(e));
+        }
 
-        // Control inputs
-        document.getElementById('zoomSpeed').addEventListener('input', (e) => {
-            this.zoomSpeed = parseFloat(e.target.value);
-            this.baseZoomSpeed = this.zoomSpeed;
-            document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
-        });
+        // Control inputs - add null checks for all elements
+        const zoomSpeedEl = document.getElementById('zoomSpeed');
+        if (zoomSpeedEl) {
+            zoomSpeedEl.addEventListener('input', (e) => {
+                this.zoomSpeed = parseFloat(e.target.value);
+                this.baseZoomSpeed = this.zoomSpeed;
+                document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
+            });
+        }
 
-        document.getElementById('blendMode').addEventListener('change', (e) => {
-            this.blendMode = e.target.value;
-        });
+        const blendModeEl = document.getElementById('blendMode');
+        if (blendModeEl) {
+            blendModeEl.addEventListener('change', (e) => {
+                this.blendMode = e.target.value;
+            });
+        }
 
-        document.getElementById('fadeIntensity').addEventListener('input', (e) => {
-            this.fadeIntensity = parseInt(e.target.value);
-            document.getElementById('fadeIntensityValue').textContent = `${this.fadeIntensity}%`;
-            // Regenerate images when fade intensity changes
-            //this.regenerateImages();
-        });
+        const fadeIntensityEl = document.getElementById('fadeIntensity');
+        if (fadeIntensityEl) {
+            fadeIntensityEl.addEventListener('input', (e) => {
+                this.fadeIntensity = parseInt(e.target.value);
+                const valueEl = document.getElementById('fadeIntensityValue');
+                if (valueEl) valueEl.textContent = `${this.fadeIntensity}%`;
+            });
+        }
 
-        document.getElementById('scaleRatio').addEventListener('input', (e) => {
-            this.scaleRatio = parseFloat(e.target.value);
-            document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
-        });
+        const scaleRatioEl = document.getElementById('scaleRatio');
+        if (scaleRatioEl) {
+            scaleRatioEl.addEventListener('input', (e) => {
+                this.scaleRatio = parseFloat(e.target.value);
+                const valueEl = document.getElementById('scaleRatioValue');
+                if (valueEl) valueEl.textContent = this.scaleRatio;
+            });
+        }
 
-        document.getElementById('zoomOffset').addEventListener('input', (e) => {
-            this.zoomOffset = parseFloat(e.target.value);
-            document.getElementById('zoomOffsetValue').textContent = `${this.zoomOffset}x`;
-        });
+        const zoomOffsetEl = document.getElementById('zoomOffset');
+        if (zoomOffsetEl) {
+            zoomOffsetEl.addEventListener('input', (e) => {
+                this.zoomOffset = parseFloat(e.target.value);
+                const valueEl = document.getElementById('zoomOffsetValue');
+                if (valueEl) valueEl.textContent = `${this.zoomOffset}x`;
+            });
+        }
 
-        // Audio controls
-        document.getElementById('audioReactiveIntensity').addEventListener('input', (e) => {
-            this.audioReactiveIntensity = parseFloat(e.target.value);
-            document.getElementById('audioIntensityValue').textContent = `${this.audioReactiveIntensity}x`;
-        });
+        // Audio controls - add null checks
+        const audioReactiveIntensityEl = document.getElementById('audioReactiveIntensity');
+        if (audioReactiveIntensityEl) {
+            audioReactiveIntensityEl.addEventListener('input', (e) => {
+                this.audioReactiveIntensity = parseFloat(e.target.value);
+                const valueEl = document.getElementById('audioIntensityValue');
+                if (valueEl) valueEl.textContent = `${this.audioReactiveIntensity}x`;
+            });
+        }
 
-        document.getElementById('audioFreqMin').addEventListener('input', (e) => {
-            this.audioFreqMin = parseInt(e.target.value);
-            document.getElementById('audioFreqMinValue').textContent = `${this.audioFreqMin}Hz`;
-        });
+        const audioFreqMinEl = document.getElementById('audioFreqMin');
+        if (audioFreqMinEl) {
+            audioFreqMinEl.addEventListener('input', (e) => {
+                this.audioFreqMin = parseInt(e.target.value);
+                const valueEl = document.getElementById('audioFreqMinValue');
+                if (valueEl) valueEl.textContent = `${this.audioFreqMin}Hz`;
+            });
+        }
 
-        document.getElementById('audioFreqMax').addEventListener('input', (e) => {
-            this.audioFreqMax = parseInt(e.target.value);
-            document.getElementById('audioFreqMaxValue').textContent = `${this.audioFreqMax}Hz`;
-        });
+        const audioFreqMaxEl = document.getElementById('audioFreqMax');
+        if (audioFreqMaxEl) {
+            audioFreqMaxEl.addEventListener('input', (e) => {
+                this.audioFreqMax = parseInt(e.target.value);
+                const valueEl = document.getElementById('audioFreqMaxValue');
+                if (valueEl) valueEl.textContent = `${this.audioFreqMax}Hz`;
+            });
+        }
 
-        document.getElementById('audioVolume').addEventListener('input', (e) => {
-            const volume = parseFloat(e.target.value);
-            if (this.audioElement) {
-                this.audioElement.volume = volume;
-            }
-            document.getElementById('audioVolumeValue').textContent = `${Math.round(volume * 100)}%`;
-        });
+        const audioVolumeEl = document.getElementById('audioVolume');
+        if (audioVolumeEl) {
+            audioVolumeEl.addEventListener('input', (e) => {
+                const volume = parseFloat(e.target.value);
+                if (this.audioElement) {
+                    this.audioElement.volume = volume;
+                }
+                const valueEl = document.getElementById('audioVolumeValue');
+                if (valueEl) valueEl.textContent = `${Math.round(volume * 100)}%`;
+            });
+        }
 
-        document.getElementById('audioEnabled').addEventListener('change', (e) => {
-            this.audioEnabled = e.target.checked;
-            this.updateAudioControls();
-        });
+        const audioEnabledEl = document.getElementById('audioEnabled');
+        if (audioEnabledEl) {
+            audioEnabledEl.addEventListener('change', (e) => {
+                this.audioEnabled = e.target.checked;
+                this.updateAudioControls();
+            });
+        }
 
-        // Shape controls
-        document.getElementById('shapeType').addEventListener('change', (e) => {
-            this.shapeType = e.target.value;
-            this.updateShapeControls();
-            //this.regenerateImages();
-        });
+        // Shape controls - add null checks
+        const shapeTypeEl = document.getElementById('shapeType');
+        if (shapeTypeEl) {
+            shapeTypeEl.addEventListener('change', (e) => {
+                this.shapeType = e.target.value;
+                this.updateShapeControls();
+            });
+        }
 
-        document.getElementById('shapeSize').addEventListener('input', (e) => {
-            this.shapeSize = parseFloat(e.target.value);
-            document.getElementById('shapeSizeValue').textContent = `${(this.shapeSize * 100).toFixed(0)}%`;
-            //this.regenerateImages();
-        });
+        const shapeSizeEl = document.getElementById('shapeSize');
+        if (shapeSizeEl) {
+            shapeSizeEl.addEventListener('input', (e) => {
+                this.shapeSize = parseFloat(e.target.value);
+                const valueEl = document.getElementById('shapeSizeValue');
+                if (valueEl) valueEl.textContent = `${(this.shapeSize * 100).toFixed(0)}%`;
+            });
+        }
 
-        document.getElementById('shapeRotation').addEventListener('input', (e) => {
-            this.shapeRotation = parseInt(e.target.value);
-            document.getElementById('shapeRotationValue').textContent = `${this.shapeRotation}°`;
-            //this.regenerateImages();
-        });
+        const shapeRotationEl = document.getElementById('shapeRotation');
+        if (shapeRotationEl) {
+            shapeRotationEl.addEventListener('input', (e) => {
+                this.shapeRotation = parseInt(e.target.value);
+                const valueEl = document.getElementById('shapeRotationValue');
+                if (valueEl) valueEl.textContent = `${this.shapeRotation}°`;
+            });
+        }
 
-        document.getElementById('shapeFeather').addEventListener('input', (e) => {
-            this.shapeFeather = parseInt(e.target.value);
-            document.getElementById('shapeFeatherValue').textContent = `${this.shapeFeather}px`;
-            //this.regenerateImages();
-        });
+        const shapeFeatherEl = document.getElementById('shapeFeather');
+        if (shapeFeatherEl) {
+            shapeFeatherEl.addEventListener('input', (e) => {
+                this.shapeFeather = parseInt(e.target.value);
+                const valueEl = document.getElementById('shapeFeatherValue');
+                if (valueEl) valueEl.textContent = `${this.shapeFeather}px`;
+            });
+        }
 
-        // Action buttons
-        document.getElementById('generateBtn').addEventListener('click', () => this.generateZoomQuilt());
-        document.getElementById('previewBtn').addEventListener('click', () => this.previewZoomQuilt());
-        document.getElementById('playPauseBtn').addEventListener('click', () => this.togglePlayPause());
-        document.getElementById('resetBtn').addEventListener('click', () => this.resetAnimation());
-        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadAnimation());
-        document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+        // New rotation mode controls - add null checks
+        const rotationModeEl = document.getElementById('rotationMode');
+        if (rotationModeEl) {
+            rotationModeEl.addEventListener('change', (e) => {
+                this.rotationMode = e.target.value;
+                this.updateRotationControls();
+            });
+        }
+
+        const progressiveRotationStepEl = document.getElementById('progressiveRotationStep');
+        if (progressiveRotationStepEl) {
+            progressiveRotationStepEl.addEventListener('input', (e) => {
+                this.progressiveRotationStep = parseInt(e.target.value);
+                const valueEl = document.getElementById('progressiveRotationStepValue');
+                if (valueEl) valueEl.textContent = `${this.progressiveRotationStep}°`;
+            });
+        }
+
+        const randomRotationMinEl = document.getElementById('randomRotationMin');
+        if (randomRotationMinEl) {
+            randomRotationMinEl.addEventListener('input', (e) => {
+                this.randomRotationMin = parseInt(e.target.value);
+                const valueEl = document.getElementById('randomRotationMinValue');
+                if (valueEl) valueEl.textContent = `${this.randomRotationMin}°`;
+            });
+        }
+
+        const randomRotationMaxEl = document.getElementById('randomRotationMax');
+        if (randomRotationMaxEl) {
+            randomRotationMaxEl.addEventListener('input', (e) => {
+                this.randomRotationMax = parseInt(e.target.value);
+                const valueEl = document.getElementById('randomRotationMaxValue');
+                if (valueEl) valueEl.textContent = `${this.randomRotationMax}°`;
+            });
+        }
+
+        const shapeRotationEnabledEl = document.getElementById('shapeRotationEnabled');
+        if (shapeRotationEnabledEl) {
+            shapeRotationEnabledEl.addEventListener('change', (e) => {
+                this.shapeRotationEnabled = e.target.checked;
+                this.updateRotationControls();
+            });
+        }
+
+        // Image rotation controls - add null checks
+        const imageRotationEnabledEl = document.getElementById('imageRotationEnabled');
+        if (imageRotationEnabledEl) {
+            imageRotationEnabledEl.addEventListener('change', (e) => {
+                this.imageRotationEnabled = e.target.checked;
+                this.updateImageRotationControls();
+            });
+        }
+
+        const imageRotationModeEl = document.getElementById('imageRotationMode');
+        if (imageRotationModeEl) {
+            imageRotationModeEl.addEventListener('change', (e) => {
+                this.imageRotationMode = e.target.value;
+                this.updateImageRotationControls();
+            });
+        }
+
+        const imageRotationEl = document.getElementById('imageRotation');
+        if (imageRotationEl) {
+            imageRotationEl.addEventListener('input', (e) => {
+                this.imageRotation = parseInt(e.target.value);
+                const valueEl = document.getElementById('imageRotationValue');
+                if (valueEl) valueEl.textContent = `${this.imageRotation}°`;
+            });
+        }
+
+        const imageProgressiveRotationStepEl = document.getElementById('imageProgressiveRotationStep');
+        if (imageProgressiveRotationStepEl) {
+            imageProgressiveRotationStepEl.addEventListener('input', (e) => {
+                this.imageProgressiveRotationStep = parseInt(e.target.value);
+                const valueEl = document.getElementById('imageProgressiveRotationStepValue');
+                if (valueEl) valueEl.textContent = `${this.imageProgressiveRotationStep}°`;
+            });
+        }
+
+        const imageRandomRotationMinEl = document.getElementById('imageRandomRotationMin');
+        if (imageRandomRotationMinEl) {
+            imageRandomRotationMinEl.addEventListener('input', (e) => {
+                this.imageRandomRotationMin = parseInt(e.target.value);
+                const valueEl = document.getElementById('imageRandomRotationMinValue');
+                if (valueEl) valueEl.textContent = `${this.imageRandomRotationMin}°`;
+            });
+        }
+
+        const imageRandomRotationMaxEl = document.getElementById('imageRandomRotationMax');
+        if (imageRandomRotationMaxEl) {
+            imageRandomRotationMaxEl.addEventListener('input', (e) => {
+                this.imageRandomRotationMax = parseInt(e.target.value);
+                const valueEl = document.getElementById('imageRandomRotationMaxValue');
+                if (valueEl) valueEl.textContent = `${this.imageRandomRotationMax}°`;
+            });
+        }
+
+        // Action buttons - add null checks
+        const generateBtnEl = document.getElementById('generateBtn');
+        if (generateBtnEl) {
+            generateBtnEl.addEventListener('click', () => this.generateZoomQuilt());
+        }
+
+        const previewBtnEl = document.getElementById('previewBtn');
+        if (previewBtnEl) {
+            previewBtnEl.addEventListener('click', () => this.previewZoomQuilt());
+        }
+
+        const playPauseBtnEl = document.getElementById('playPauseBtn');
+        if (playPauseBtnEl) {
+            playPauseBtnEl.addEventListener('click', () => this.togglePlayPause());
+        }
+
+        const resetBtnEl = document.getElementById('resetBtn');
+        if (resetBtnEl) {
+            resetBtnEl.addEventListener('click', () => this.resetAnimation());
+        }
+
+        const downloadBtnEl = document.getElementById('downloadBtn');
+        if (downloadBtnEl) {
+            downloadBtnEl.addEventListener('click', () => this.downloadAnimation());
+        }
+
+        const fullscreenBtnEl = document.getElementById('fullscreenBtn');
+        if (fullscreenBtnEl) {
+            fullscreenBtnEl.addEventListener('click', () => this.toggleFullscreen());
+        }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -846,6 +1028,58 @@ class ZoomQuiltGenerator {
         }
     }
 
+    updateRotationControls() {
+        const progressiveGroup = document.getElementById('progressiveRotationGroup');
+        const randomGroup = document.getElementById('randomRotationGroup');
+        const fixedGroup = document.getElementById('shapeRotationGroup');
+        
+        // Show/hide controls based on rotation mode and if shape rotation is enabled
+        const isEnabled = this.shapeRotationEnabled;
+        
+        if (progressiveGroup) progressiveGroup.style.display = 
+            (isEnabled && this.rotationMode === 'progressive') ? 'block' : 'none';
+        
+        if (randomGroup) randomGroup.style.display = 
+            (isEnabled && this.rotationMode === 'random') ? 'block' : 'none';
+        
+        if (fixedGroup) fixedGroup.style.display = 
+            (isEnabled && this.rotationMode === 'fixed') ? 'block' : 'none';
+
+        // Enable/disable the rotation mode selector
+        const rotationModeSelect = document.getElementById('rotationMode');
+        if (rotationModeSelect) {
+            rotationModeSelect.disabled = !isEnabled;
+        }
+    }
+
+    updateImageRotationControls() {
+        const imageRotationControls = document.querySelector('.image-rotation-controls');
+        if (imageRotationControls) {
+            const inputs = imageRotationControls.querySelectorAll('input:not([type="checkbox"]), select');
+            inputs.forEach(input => {
+                if (input.id !== 'imageRotationEnabled') {
+                    input.disabled = !this.imageRotationEnabled;
+                }
+            });
+        }
+
+        // Show/hide specific image rotation mode controls
+        const imageProgressiveGroup = document.getElementById('imageProgressiveRotationGroup');
+        const imageRandomGroup = document.getElementById('imageRandomRotationGroup');
+        const imageFixedGroup = document.getElementById('imageRotationGroup');
+        
+        const isEnabled = this.imageRotationEnabled;
+        
+        if (imageProgressiveGroup) imageProgressiveGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'progressive') ? 'block' : 'none';
+        
+        if (imageRandomGroup) imageRandomGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
+        
+        if (imageFixedGroup) imageFixedGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'fixed') ? 'block' : 'none';
+    }
+
     loadImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -1053,36 +1287,176 @@ class ZoomQuiltGenerator {
 
     updateButtons() {
         const hasImages = this.images.length > 0;
-        document.getElementById('generateBtn').disabled = !hasImages;
-        document.getElementById('previewBtn').disabled = !hasImages;
-        document.getElementById('downloadBtn').disabled = !hasImages;
+        
+        // Add null checks for button elements
+        const generateBtn = document.getElementById('generateBtn');
+        if (generateBtn) generateBtn.disabled = !hasImages;
+        
+        const previewBtn = document.getElementById('previewBtn');
+        if (previewBtn) previewBtn.disabled = !hasImages;
+        
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) downloadBtn.disabled = !hasImages;
         
         // Update export status text
         const statusText = document.getElementById('exportStatusText');
-        if (hasImages) {
-            if (this.loadedImages.length > 0) {
-                statusText.textContent = 'Ready to export! Settings changes require regenerating first.';
+        if (statusText) {
+            if (hasImages) {
+                if (this.loadedImages.length > 0) {
+                    statusText.textContent = 'Ready to export! Settings changes require regenerating first.';
+                } else {
+                    statusText.textContent = 'Generate the zoom quilt first, then export.';
+                }
             } else {
-                statusText.textContent = 'Generate the zoom quilt first, then export.';
+                statusText.textContent = 'Add some images to get started.';
             }
-        } else {
-            statusText.textContent = 'Add some images to get started.';
         }
     }
 
     updateControlValues() {
-        document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
-        document.getElementById('fadeIntensityValue').textContent = `${this.fadeIntensity}%`;
-        document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
-        document.getElementById('zoomOffsetValue').textContent = `${this.zoomOffset}x`; 
-        document.getElementById('audioIntensityValue').textContent = `${this.audioReactiveIntensity}x`;
-        document.getElementById('audioFreqMinValue').textContent = `${this.audioFreqMin}Hz`;
-        document.getElementById('audioFreqMaxValue').textContent = `${this.audioFreqMax}Hz`;
-        document.getElementById('audioVolumeValue').textContent = '70%';
+        // Add null checks for all value display elements
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        };
 
-        document.getElementById('shapeSizeValue').textContent = `${(this.shapeSize * 100).toFixed(0)}%`;
-        document.getElementById('shapeRotationValue').textContent = `${this.shapeRotation}°`;
-        document.getElementById('shapeFeatherValue').textContent = `${this.shapeFeather}px`;
+        updateElement('zoomSpeedValue', `${this.zoomSpeed}x`);
+        updateElement('fadeIntensityValue', `${this.fadeIntensity}%`);
+        updateElement('scaleRatioValue', this.scaleRatio);
+        updateElement('zoomOffsetValue', `${this.zoomOffset}x`);
+        updateElement('audioIntensityValue', `${this.audioReactiveIntensity}x`);
+        updateElement('audioFreqMinValue', `${this.audioFreqMin}Hz`);
+        updateElement('audioFreqMaxValue', `${this.audioFreqMax}Hz`);
+        updateElement('audioVolumeValue', '70%');
+        updateElement('shapeSizeValue', `${(this.shapeSize * 100).toFixed(0)}%`);
+        updateElement('shapeRotationValue', `${this.shapeRotation}°`);
+        updateElement('shapeFeatherValue', `${this.shapeFeather}px`);
+        updateElement('progressiveRotationStepValue', `${this.progressiveRotationStep}°`);
+        updateElement('randomRotationMinValue', `${this.randomRotationMin}°`);
+        updateElement('randomRotationMaxValue', `${this.randomRotationMax}°`);
+        updateElement('imageRotationValue', `${this.imageRotation}°`);
+        updateElement('imageProgressiveRotationStepValue', `${this.imageProgressiveRotationStep}°`);
+        updateElement('imageRandomRotationMinValue', `${this.imageRandomRotationMin}°`);
+        updateElement('imageRandomRotationMaxValue', `${this.imageRandomRotationMax}°`);
+    }
+
+    showCanvasLoadingScreen() {
+        // Clear canvas and show loading screen
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Set up loading screen styles
+        this.ctx.save();
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Background gradient
+        const gradient = this.ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, Math.min(this.canvas.width, this.canvas.height) / 2
+        );
+        gradient.addColorStop(0, 'rgba(102, 126, 234, 0.1)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Loading spinner
+        const time = Date.now() * 0.003;
+        const spinnerRadius = 40;
+        const spinnerThickness = 6;
+        
+        // Spinner background circle
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.lineWidth = spinnerThickness;
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY - 30, spinnerRadius, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        // Animated spinner arc
+        this.ctx.strokeStyle = '#667eea';
+        this.ctx.lineWidth = spinnerThickness;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY - 30, spinnerRadius, time, time + Math.PI * 1.5);
+        this.ctx.stroke();
+        
+        // Loading text
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 24px Arial, sans-serif';
+        this.ctx.fillText('Generating Zoom Quilt...', centerX, centerY + 40);
+        
+        // Subtitle
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.font = '16px Arial, sans-serif';
+        this.ctx.fillText('Processing images and applying effects', centerX, centerY + 70);
+        
+        this.ctx.restore();
+    }
+
+    startCanvasLoadingAnimation() {
+        // Start loading animation
+        this.loadingAnimationId = setInterval(() => {
+            this.showCanvasLoadingScreen();
+        }, 50); // 20 FPS for smooth animation
+    }
+
+    stopCanvasLoadingAnimation() {
+        // Stop loading animation
+        if (this.loadingAnimationId) {
+            clearInterval(this.loadingAnimationId);
+            this.loadingAnimationId = null;
+        }
+    }
+
+    calculateRotationForImage(imageIndex) {
+        if (!this.shapeRotationEnabled) return 0;
+
+        switch (this.rotationMode) {
+            case 'fixed':
+                return this.shapeRotation;
+            
+            case 'progressive':
+                return this.shapeRotation + (imageIndex * this.progressiveRotationStep);
+            
+            case 'random':
+                // Use seeded random based on image index for consistency
+                const seed = imageIndex * 12345;
+                const pseudoRandom = Math.sin(seed) * 10000;
+                const normalizedRandom = (pseudoRandom - Math.floor(pseudoRandom));
+                const range = this.randomRotationMax - this.randomRotationMin;
+                return this.randomRotationMin + (normalizedRandom * range);
+            
+            default:
+                return this.shapeRotation;
+        }
+    }
+
+    calculateImageRotationForImage(imageIndex) {
+        if (!this.imageRotationEnabled) return 0;
+
+        switch (this.imageRotationMode) {
+            case 'fixed':
+                return this.imageRotation;
+            
+            case 'progressive':
+                return this.imageRotation + (imageIndex * this.imageProgressiveRotationStep);
+            
+            case 'random':
+                // Use different seed for image rotation
+                const seed = imageIndex * 54321;
+                const pseudoRandom = Math.sin(seed) * 10000;
+                const normalizedRandom = (pseudoRandom - Math.floor(pseudoRandom));
+                const range = this.imageRandomRotationMax - this.imageRandomRotationMin;
+                return this.imageRandomRotationMin + (normalizedRandom * range);
+            
+            default:
+                return this.imageRotation;
+        }
     }
 
     async generateZoomQuilt() {
@@ -1091,35 +1465,129 @@ class ZoomQuiltGenerator {
         // Stop any existing animation first
         this.pauseAnimation();
 
-        // Initialize audio context if needed
-        if (this.audioEnabled && this.audioFile) {
-            await this.initAudioContext();
+        // Show loading screen on canvas
+        this.startCanvasLoadingAnimation();
+
+        // Disable generate button and show loading state
+        const generateBtn = document.getElementById('generateBtn');
+        const originalText = generateBtn ? generateBtn.textContent : '';
+        if (generateBtn) {
+            generateBtn.disabled = true;
+            generateBtn.textContent = '🔄 Generating...';
         }
 
-        // Prepare images for rendering
-        this.loadedImages = await this.prepareImages();
+        try {
+            // Initialize audio context if needed
+            if (this.audioEnabled && this.audioFile) {
+                await this.initAudioContext();
+            }
 
-        // Start the animation
-        this.startAnimation();
+            // Add a small delay to ensure loading screen is visible
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Start audio if enabled
-        if (this.audioEnabled && this.audioElement) {
-            try {
-                this.audioElement.currentTime = 0;
-                await this.audioElement.play();
-            } catch (error) {
-                console.error('Failed to play audio:', error);
+            // Prepare images for rendering
+            this.loadedImages = await this.prepareImages();
+
+            // Stop loading animation
+            this.stopCanvasLoadingAnimation();
+
+            // Start the animation
+            this.startAnimation();
+
+            // Start audio if enabled
+            if (this.audioEnabled && this.audioElement) {
+                try {
+                    this.audioElement.currentTime = 0;
+                    await this.audioElement.play();
+                } catch (error) {
+                    console.error('Failed to play audio:', error);
+                }
+            }
+
+            // Enable download button
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) downloadBtn.disabled = false;
+
+            // Show success notification
+            this.showNotification('Zoom quilt generated successfully!', 'success');
+
+        } catch (error) {
+            console.error('Failed to generate zoom quilt:', error);
+            this.stopCanvasLoadingAnimation();
+            
+            // Clear canvas on error
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            this.showNotification('Failed to generate zoom quilt. Please try again.', 'error');
+        } finally {
+            // Restore generate button
+            if (generateBtn) {
+                generateBtn.disabled = false;
+                generateBtn.textContent = originalText || '🎬 Generate';
             }
         }
-
-        // Enable download button
-        document.getElementById('downloadBtn').disabled = false;
     }
     
     async prepareImages() {
         const loadedImages = [];
+        const totalImages = this.images.length;
 
-        for (const imageData of this.images) {
+        for (let i = 0; i < this.images.length; i++) {
+            const imageData = this.images[i];
+            
+            // Update loading screen with progress
+            if (this.loadingAnimationId) {
+                // Temporarily clear the loading animation to show progress
+                this.stopCanvasLoadingAnimation();
+                
+                // Show progress on canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                const progress = (i + 1) / totalImages;
+                
+                // Progress background
+                this.ctx.save();
+                this.ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Progress bar
+                const barWidth = Math.min(300, this.canvas.width * 0.6);
+                const barHeight = 8;
+                const barX = centerX - barWidth / 2;
+                const barY = centerY + 20;
+                
+                // Progress bar background
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                this.ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // Progress bar fill
+                this.ctx.fillStyle = '#667eea';
+                this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+                
+                // Progress text
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = 'bold 20px Arial, sans-serif';
+                this.ctx.fillText('Processing Images...', centerX, centerY - 20);
+                
+                this.ctx.font = '14px Arial, sans-serif';
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                this.ctx.fillText(`${i + 1} of ${totalImages} images processed`, centerX, centerY + 50);
+                this.ctx.fillText(`${Math.round(progress * 100)}%`, centerX, centerY + 70);
+                
+                this.ctx.restore();
+                
+                // Small delay to make progress visible
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
             // Create canvas for each image with fade effect
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -1128,15 +1596,13 @@ class ZoomQuiltGenerator {
             canvas.width = this.canvas.width;
             canvas.height = this.canvas.height;
 
-            // Calculate image scaling to cover the entire canvas (like CSS background-size: cover)
+            // Calculate image scaling to cover the entire canvas
             const scaleX = canvas.width / imageData.width;
             const scaleY = canvas.height / imageData.height;
-            const scale = Math.max(scaleX, scaleY); // Use max to cover entire canvas
+            const scale = Math.max(scaleX, scaleY);
 
             const scaledWidth = imageData.width * scale;
             const scaledHeight = imageData.height * scale;
-            const x = (canvas.width - scaledWidth) / 2;
-            const y = (canvas.height - scaledHeight) / 2;
 
             // Fill canvas with black first
             ctx.fillStyle = '#000000';
@@ -1146,59 +1612,72 @@ class ZoomQuiltGenerator {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // Draw the image to cover the entire canvas
-            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
+            // Apply image rotation if enabled
+            const imageRotation = this.calculateImageRotationForImage(i);
+            
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((imageRotation * Math.PI) / 180);
 
-            // Apply fade effect to edges
-            this.applyFadeEffect(ctx, canvas.width, canvas.height);
+            // Draw the image centered and rotated
+            const x = -scaledWidth / 2;
+            const y = -scaledHeight / 2;
+            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
+            
+            ctx.restore();
+
+            // Apply fade effect to edges with calculated rotation for shapes
+            const shapeRotation = this.calculateRotationForImage(i);
+            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, shapeRotation);
 
             loadedImages.push({
                 canvas: canvas,
                 ctx: ctx,
-                originalData: imageData
+                originalData: imageData,
+                shapeRotation: shapeRotation,
+                imageRotation: imageRotation
             });
         }
 
         return loadedImages;
-    } 
-    
-    applyFadeEffect(ctx, width, height) {
-        // Skip any processing if fade intensity is 0 and shape is rectangle
-        if (this.fadeIntensity === 0 && this.shapeType === 'rectangle') return;
+    }
+
+    applyFadeEffectWithRotation(ctx, width, height, rotationAngle) {
+        // Skip any processing if fade intensity is 0 and shape is rectangle with no rotation
+        if (this.fadeIntensity === 0 && this.shapeType === 'rectangle' && rotationAngle === 0) return;
         
-        if (this.shapeType === 'rectangle') {
-            // For rectangles, ONLY apply the rectangle fade if intensity > 0
-            if (this.fadeIntensity > 0) {
-                this.applyRectangleFade(ctx, width, height);
-            }
-            // Do NOT apply any shape masking for rectangles
+        if (this.shapeType === 'alpha-transparency') {
+            // Apply alpha transparency effect
+            this.applyAlphaTransparencyEffect(ctx, width, height);
             return;
         }
         
-        // For non-rectangle shapes, apply shape mask first
-        this.applyShapeMask(ctx, width, height);
+        // For ALL shapes including rectangle, use consistent masking approach
+        this.applyShapeMaskWithRotation(ctx, width, height, rotationAngle);
         
         // Then apply shape-specific fade if feather > 0
         if (this.shapeFeather > 0) {
-            this.applyShapeFade(ctx, width, height);
+            this.applyShapeFadeWithRotation(ctx, width, height, rotationAngle);
+        }
+        
+        // Apply additional fade intensity for rectangle (if needed)
+        if (this.shapeType === 'rectangle' && this.fadeIntensity > 0) {
+            this.applyRectangleFadeIntensity(ctx, width, height);
         }
     }
 
-    applyRectangleFade(ctx, width, height) {
-        const fadeIntensity = this.fadeIntensity / 100; // Convert to 0-1 range
-        
+    applyRectangleFadeIntensity(ctx, width, height) {
+        const fadeIntensity = this.fadeIntensity / 100;
         if (fadeIntensity <= 0) return;
-        
-        // Larger fade zone for smoother blending
-        const fadeSize = Math.min(width, height) * 0.5 * fadeIntensity; // Increased to 50%
-        
-        if (fadeSize <= 2) return;
         
         // Get the current image data
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         
-        // Apply fade by modifying alpha values directly with improved algorithm
+        // Calculate fade size
+        const fadeSize = Math.min(width, height) * 0.5 * fadeIntensity;
+        
+        // Apply fade by modifying alpha values
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const index = (y * width + x) * 4;
@@ -1216,17 +1695,11 @@ class ZoomQuiltGenerator {
                 let alphaMultiplier = 1;
                 
                 if (minDistToEdge < fadeSize) {
-                    // Use smooth cubic easing for even smoother gradients
                     const normalizedDist = minDistToEdge / fadeSize;
-                    
-                    // Cubic easing out for very smooth fade
                     const easedDist = 1 - Math.pow(1 - normalizedDist, 3);
-                    
-                    // Apply fade strength with improved blending
-                    const fadeAmount = fadeIntensity * 0.95; // Max 95% fade for better edge handling
+                    const fadeAmount = fadeIntensity * 0.95;
                     alphaMultiplier = easedDist + (1 - easedDist) * (1 - fadeAmount);
                     
-                    // Additional smoothing for the very edge pixels
                     if (minDistToEdge < 2) {
                         const edgeSmoothing = minDistToEdge / 2;
                         alphaMultiplier *= edgeSmoothing;
@@ -1240,13 +1713,205 @@ class ZoomQuiltGenerator {
         
         // Put the modified image data back
         ctx.putImageData(imageData, 0, 0);
-        
-        // Additional blur pass for extra smoothness at edges
-        if (fadeIntensity > 0.3) {
-            this.applyAdditionalEdgeBlur(ctx, width, height, fadeSize);
-        }
     }
 
+    applyAlphaTransparencyEffect(ctx, width, height) {
+        // Get the current image data
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        
+        // Apply alpha transparency based on luminance
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const alpha = data[i + 3];
+            
+            // Calculate luminance (perceived brightness)
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            
+            // Convert luminance to 0-1 range
+            const normalizedLuminance = luminance / 255;
+            
+            // Apply transparency - darker colors become more transparent
+            // Use shapeSize to control the intensity of the effect
+            const transparencyFactor = Math.pow(normalizedLuminance, 1 / this.shapeSize);
+            
+            // Apply feather to control the transition smoothness
+            const featherFactor = this.shapeFeather / 100; // Convert to 0-1 range
+            const smoothedTransparency = transparencyFactor * (1 - featherFactor) + featherFactor;
+            
+            // Set new alpha value
+            data[i + 3] = Math.floor(alpha * smoothedTransparency);
+        }
+        
+        // Put the modified image data back
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    applyShapeMaskWithRotation(ctx, width, height, rotationAngle) {
+        // Skip mask for alpha transparency - it's handled separately
+        if (this.shapeType === 'alpha-transparency') return;
+        
+        // Create a new canvas for the mask
+        const maskCanvas = document.createElement('canvas');
+        const maskCtx = maskCanvas.getContext('2d');
+        maskCanvas.width = width;
+        maskCanvas.height = height;
+
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const baseSize = Math.min(width, height) * 0.4 * this.shapeSize;
+
+        // Fill the mask canvas with black first
+        maskCtx.fillStyle = 'black';
+        maskCtx.fillRect(0, 0, width, height);
+
+        // Save the current state
+        maskCtx.save();
+        
+        // Translate to center and rotate with calculated angle
+        maskCtx.translate(centerX, centerY);
+        maskCtx.rotate((rotationAngle * Math.PI) / 180);
+
+        // Create the shape path
+        maskCtx.beginPath();
+        
+        switch (this.shapeType) {
+            case 'rectangle':
+                this.drawRectangleMask(maskCtx, baseSize);
+                break;
+            case 'circle':
+                this.drawCircleMask(maskCtx, baseSize);
+                break;
+            case 'heart':
+                this.drawHeartMask(maskCtx, baseSize);
+                break;
+            case 'star':
+                this.drawStarMask(maskCtx, baseSize);
+                break;
+            case 'triangle':
+                this.drawTriangleMask(maskCtx, baseSize);
+                break;
+            case 'diamond':
+                this.drawDiamondMask(maskCtx, baseSize);
+                break;
+            case 'pentagon':
+                this.drawPolygonMask(maskCtx, baseSize, 5);
+                break;
+            case 'hexagon':
+                this.drawPolygonMask(maskCtx, baseSize, 6);
+                break;
+            case 'flower':
+                this.drawFlowerMask(maskCtx, baseSize);
+                break;
+        }
+
+        maskCtx.restore();
+
+        // Fill the shape with white (the area to keep)
+        maskCtx.fillStyle = 'white';
+        maskCtx.fill();
+
+        // Apply the mask to the main context
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    drawRectangleMask(ctx, size) {
+        // Rectangle dimensions based on size
+        const rectWidth = size * 2; // Make it wider
+        const rectHeight = size * 1.5; // And taller
+        
+        // Draw rectangle centered at origin
+        ctx.rect(-rectWidth/2, -rectHeight/2, rectWidth, rectHeight);
+    }
+
+    applyShapeFadeWithRotation(ctx, width, height, rotationAngle) {
+        // Skip feathering for alpha transparency
+        if (this.shapeType === 'alpha-transparency') return;
+        
+        const fadeSize = this.shapeFeather;
+        
+        if (fadeSize === 0) return;
+        
+        // Create a blur effect using multiple shape layers
+        const blurCanvas = document.createElement('canvas');
+        const blurCtx = blurCanvas.getContext('2d');
+        blurCanvas.width = width;
+        blurCanvas.height = height;
+        
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const baseSize = Math.min(width, height) * 0.4 * this.shapeSize;
+        
+        // Use CSS filter blur for smooth edges
+        blurCtx.filter = `blur(${fadeSize / 4}px)`;
+        
+        // Draw the main shape with rotation
+        blurCtx.save();
+        blurCtx.translate(centerX, centerY);
+        blurCtx.rotate((rotationAngle * Math.PI) / 180);
+        blurCtx.fillStyle = 'white';
+        blurCtx.beginPath();
+        this.drawShapeForFeather(blurCtx, baseSize);
+        blurCtx.fill();
+        blurCtx.restore();
+        
+        // Add additional blur layers for smoother gradient
+        for (let i = 1; i <= 3; i++) {
+            const layerSize = baseSize + (fadeSize * i * 0.3);
+            const layerBlur = fadeSize / 4 + (i * fadeSize / 8);
+            const layerOpacity = 1 - (i * 0.2);
+            
+            blurCtx.filter = `blur(${layerBlur}px)`;
+            blurCtx.globalAlpha = layerOpacity * 0.3;
+            
+            blurCtx.save();
+            blurCtx.translate(centerX, centerY);
+            blurCtx.rotate((rotationAngle * Math.PI) / 180);
+            blurCtx.fillStyle = 'white';
+            blurCtx.beginPath();
+            this.drawShapeForFeather(blurCtx, layerSize);
+            blurCtx.fill();
+            blurCtx.restore();
+        }
+        
+        // Reset filter and alpha
+        blurCtx.filter = 'none';
+        blurCtx.globalAlpha = 1;
+        
+        // Apply the blurred mask
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(blurCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+    }
+    
+    applyFadeEffect(ctx, width, height) {
+        // Skip any processing if fade intensity is 0 and shape is rectangle
+        if (this.fadeIntensity === 0 && this.shapeType === 'rectangle') return;
+        
+        if (this.shapeType === 'alpha-transparency') {
+            // Apply alpha transparency effect
+            this.applyAlphaTransparencyEffect(ctx, width, height);
+            return;
+        }
+        
+        // For ALL shapes including rectangle, apply shape mask first
+        this.applyShapeMask(ctx, width, height);
+        
+        // Then apply shape-specific fade if feather > 0
+        if (this.shapeFeather > 0) {
+            this.applyShapeFade(ctx, width, height);
+        }
+        
+        // Apply additional fade intensity for rectangle (if needed)
+        if (this.shapeType === 'rectangle' && this.fadeIntensity > 0) {
+            this.applyRectangleFadeIntensity(ctx, width, height);
+        }
+    }
+    
     applyAdditionalEdgeBlur(ctx, width, height, fadeSize) {
         // Create a temporary canvas for edge blur
         const tempCanvas = document.createElement('canvas');
@@ -1348,8 +2013,14 @@ class ZoomQuiltGenerator {
     }
 
     drawShapeForFeather(ctx, size) {
+        // Skip for alpha transparency as it doesn't use traditional feathering
+        if (this.shapeType === 'alpha-transparency') return;
+        
         // Simplified shape drawing for feathering (without complex fills)
         switch (this.shapeType) {
+            case 'rectangle':
+                this.drawRectangleMask(ctx, size);
+                break;
             case 'circle':
                 ctx.arc(0, 0, size, 0, Math.PI * 2);
                 break;
@@ -1653,10 +2324,10 @@ class ZoomQuiltGenerator {
         const baseZoom = Math.exp(cycleProgress * cycleLength);
         
         // Extended layer range - draw from larger background images to smaller foreground ones
-        const totalLayers = this.loadedImages.length + 12; // Even more buffer for large images
+        const totalLayers = this.loadedImages.length + 12;
         
         // Draw layers from largest to smallest (background to foreground)
-        for (let layer = -6; layer < totalLayers; layer++) { // Start from -6 for even larger images
+        for (let layer = -6; layer < totalLayers; layer++) {
             // Calculate which image to use for this layer
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
             const imageCanvas = this.loadedImages[imageIndex].canvas;
@@ -1664,16 +2335,32 @@ class ZoomQuiltGenerator {
             // Calculate the scale for this layer
             let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            // Apply parallax offset - but keep it subtle and smooth
+            // Apply smoothed parallax offset to prevent jumping
             if (this.zoomOffset !== 0) {
-                // Instead of multiplying by layer directly, use a smoother function
-                // This creates parallax without breaking the cycling
-                const parallaxFactor = Math.sin(this.zoomLevel * this.zoomOffset * 0.1 + layer * 0.5) * 0.02;
-                layerScale *= (1 + parallaxFactor);
+                // Use a much smoother function that wraps properly at cycle boundaries
+                // This eliminates the jumping by ensuring continuity
+                const smoothPhase = this.zoomLevel * this.zoomOffset * 0.1;
+                const layerPhase = layer * 0.3; // Reduced from 0.5 for smoother transitions
+                
+                // Use a combination of sine and cosine for smoother transitions
+                const parallaxFactorA = Math.sin(smoothPhase + layerPhase) * 0.01; // Reduced intensity
+                const parallaxFactorB = Math.cos(smoothPhase * 1.3 + layerPhase * 0.7) * 0.005; // Secondary wave
+                
+                // Combine and apply with smoothing near cycle boundaries
+                const combinedFactor = parallaxFactorA + parallaxFactorB;
+                
+                // Add smoothing factor that reduces parallax effect near cycle boundaries
+                // This prevents abrupt changes when images cycle
+                const cycleBoundarySmoothing = Math.min(1, 
+                    Math.min(cycleProgress * 10, (1 - cycleProgress) * 10)
+                );
+                
+                const smoothedParallaxFactor = combinedFactor * cycleBoundarySmoothing;
+                layerScale *= (1 + smoothedParallaxFactor);
             }
             
-            // Much more generous scale limits - keep very large images visible longer
-            if (layerScale < 0.0001 || layerScale > 50) continue; // Extended both limits significantly
+            // More generous scale limits
+            if (layerScale < 0.0001 || layerScale > 50) continue;
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
@@ -1681,14 +2368,13 @@ class ZoomQuiltGenerator {
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
             
-            // Much more generous culling - only skip if image is WAY outside the visible area
-            // Increased buffer significantly to prevent premature culling
-            const buffer = Math.max(scaledWidth, scaledHeight) * 0.5; // 50% buffer instead of 10%
+            // Generous culling with large buffer
+            const buffer = Math.max(scaledWidth, scaledHeight) * 0.5;
             if (x + scaledWidth + buffer < -this.canvas.width || 
                 y + scaledHeight + buffer < -this.canvas.height || 
                 x - buffer > this.canvas.width * 2 || 
                 y - buffer > this.canvas.height * 2) {
-                continue; // Only skip if REALLY far outside with huge buffer
+                continue;
             }
             
             // Set blend mode for layering
@@ -2237,7 +2923,9 @@ class ZoomQuiltGenerator {
     async prepareImagesForExport(width, height) {
         const exportImages = [];
 
-        for (const imageData of this.images) {
+        for (let i = 0; i < this.images.length; i++) {
+            const imageData = this.images[i];
+            
             // Create canvas for each image with export dimensions
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -2253,8 +2941,6 @@ class ZoomQuiltGenerator {
 
             const scaledWidth = imageData.width * scale;
             const scaledHeight = imageData.height * scale;
-            const x = (canvas.width - scaledWidth) / 2;
-            const y = (canvas.height - scaledHeight) / 2;
 
             // Fill canvas with black first
             ctx.fillStyle = '#000000';
@@ -2264,16 +2950,30 @@ class ZoomQuiltGenerator {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // Draw the image to cover the entire canvas
-            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
+            // Apply image rotation if enabled
+            const imageRotation = this.calculateImageRotationForImage(i);
+            
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((imageRotation * Math.PI) / 180);
 
-            // Apply fade effect to edges
-            this.applyFadeEffect(ctx, canvas.width, canvas.height);
+            // Draw the image centered and rotated
+            const x = -scaledWidth / 2;
+            const y = -scaledHeight / 2;
+            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
+            
+            ctx.restore();
+
+            // Apply fade effect to edges with calculated rotation
+            const shapeRotation = this.calculateRotationForImage(i);
+            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, shapeRotation);
 
             exportImages.push({
                 canvas: canvas,
                 ctx: ctx,
-                originalData: imageData
+                originalData: imageData,
+                shapeRotation: shapeRotation,
+                imageRotation: imageRotation
             });
         }
 
@@ -2482,13 +3182,57 @@ class ZoomQuiltGenerator {
 
     updateShapeControls() {
         const rotationGroup = document.getElementById('shapeRotationGroup');
-        const needsRotation = ['star', 'triangle', 'diamond', 'pentagon', 'hexagon'];
+        const shapeFeatherGroup = document.querySelector('.control-group:has(#shapeFeather)');
+        const shapeSizeGroup = document.querySelector('.control-group:has(#shapeSize)');
+        const fadeIntensityGroup = document.querySelector('.control-group:has(#fadeIntensity)');
         
-        if (needsRotation.includes(this.shapeType)) {
-            rotationGroup.style.display = 'block';
+        if (this.shapeType === 'alpha-transparency') {
+            // Hide rotation for alpha transparency
+            if (rotationGroup) rotationGroup.style.display = 'none';
+            
+            // Show size and feather with different labels for alpha transparency
+            if (shapeSizeGroup) {
+                shapeSizeGroup.style.display = 'block';
+                const label = shapeSizeGroup.querySelector('label');
+                if (label) label.textContent = 'Transparency Intensity';
+            }
+            
+            if (shapeFeatherGroup) {
+                shapeFeatherGroup.style.display = 'block';
+                const label = shapeFeatherGroup.querySelector('label');
+                if (label) label.textContent = 'Transparency Smoothness';
+            }
+            
+            // Hide fade intensity for alpha transparency as it's not used
+            if (fadeIntensityGroup) fadeIntensityGroup.style.display = 'none';
+            
         } else {
-            rotationGroup.style.display = 'none';
+            // Restore original labels
+            if (shapeSizeGroup) {
+                const label = shapeSizeGroup.querySelector('label');
+                if (label) label.textContent = 'Shape Size';
+            }
+            
+            if (shapeFeatherGroup) {
+                const label = shapeFeatherGroup.querySelector('label');
+                if (label) label.textContent = 'Shape Feather';
+            }
+            
+            // Show fade intensity for other shapes
+            if (fadeIntensityGroup) fadeIntensityGroup.style.display = 'block';
+            
+            // Handle rotation visibility for other shapes
+            const needsRotation = ['star', 'triangle', 'diamond', 'pentagon', 'hexagon', 'rectangle'];
+            
+            if (needsRotation.includes(this.shapeType)) {
+                if (rotationGroup) rotationGroup.style.display = 'block';
+            } else {
+                if (rotationGroup) rotationGroup.style.display = 'none';
+            }
         }
+
+        // Update rotation controls visibility
+        this.updateRotationControls();
     }
 
     drawSimpleFlowerMask(ctx, size) {

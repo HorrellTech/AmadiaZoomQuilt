@@ -114,6 +114,7 @@
                                 <option value="pentagon">Pentagon</option>
                                 <option value="hexagon">Hexagon</option>
                                 <option value="flower">Flower</option>
+                                <option value="alpha-transparency">Alpha Transparency</option>
                             </select>
                         </div>
 
@@ -123,10 +124,49 @@
                             <span class="value-display" id="shapeSizeValue">100%</span>
                         </div>
 
-                        <div class="control-group" id="shapeRotationGroup" style="display: none;">
-                            <label for="shapeRotation">Shape Rotation</label>
-                            <input type="range" id="shapeRotation" min="0" max="360" value="0" step="5">
+                        <!-- Shape Rotation Controls -->
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="shapeRotationEnabled" checked>
+                                Enable Shape Rotation
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="rotationMode">Rotation Mode</label>
+                            <select id="rotationMode">
+                                <option value="fixed">Fixed Rotation</option>
+                                <option value="progressive">Progressive Rotation</option>
+                                <option value="random">Random Rotation</option>
+                            </select>
+                        </div>
+
+                        <!-- Fixed rotation (existing control) -->
+                        <div class="control-group" id="shapeRotationGroup">
+                            <label for="shapeRotation">Base Rotation (0° - 360°)</label>
+                            <input type="range" id="shapeRotation" min="0" max="360" value="0" step="1">
                             <span class="value-display" id="shapeRotationValue">0°</span>
+                        </div>
+
+                        <!-- Progressive rotation controls -->
+                        <div class="control-group" id="progressiveRotationGroup" style="display: none;">
+                            <label for="progressiveRotationStep">Progressive Step</label>
+                            <input type="range" id="progressiveRotationStep" min="1" max="90" value="15" step="1">
+                            <span class="value-display" id="progressiveRotationStepValue">15°</span>
+                            <small>Rotation increase per image</small>
+                        </div>
+
+                        <!-- Random rotation controls -->
+                        <div class="control-group" id="randomRotationGroup" style="display: none;">
+                            <label for="randomRotationMin">Random Min</label>
+                            <input type="range" id="randomRotationMin" min="0" max="360" value="0" step="1">
+                            <span class="value-display" id="randomRotationMinValue">0°</span>
+                        </div>
+
+                        <div class="control-group" id="randomRotationGroup2" style="display: none;">
+                            <label for="randomRotationMax">Random Max</label>
+                            <input type="range" id="randomRotationMax" min="0" max="360" value="360" step="1">
+                            <span class="value-display" id="randomRotationMaxValue">360°</span>
                         </div>
 
                         <div class="control-group">
