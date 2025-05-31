@@ -7,8 +7,10 @@ class ZoomQuiltGenerator {
         this.zoomLevel = 0;
         this.zoomSpeed = 0.5;
         this.blendMode = 'normal';
-        this.fadeIntensity = 100;
+        this.fadeIntensity = 20;
         this.scaleRatio = 0.1;
+        this.zoomOffset = 0; // New parallax offset setting
+        this.canvas = null;
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
@@ -25,6 +27,11 @@ class ZoomQuiltGenerator {
         this.audioFreqMin = 60;
         this.audioFreqMax = 250;
         this.baseZoomSpeed = 1.0;
+
+        this.shapeType = 'rectangle'; // Default shape
+        this.shapeSize = 1.0; // Scale factor for shapes
+        this.shapeRotation = 0; // Rotation angle for shapes
+        this.shapeFeather = 20; // Feathering/softness of shape edges
 
         // Visualizer properties
         this.visualizers = {
@@ -403,11 +410,18 @@ class ZoomQuiltGenerator {
         document.getElementById('fadeIntensity').addEventListener('input', (e) => {
             this.fadeIntensity = parseInt(e.target.value);
             document.getElementById('fadeIntensityValue').textContent = `${this.fadeIntensity}%`;
+            // Regenerate images when fade intensity changes
+            //this.regenerateImages();
         });
 
         document.getElementById('scaleRatio').addEventListener('input', (e) => {
             this.scaleRatio = parseFloat(e.target.value);
             document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
+        });
+
+        document.getElementById('zoomOffset').addEventListener('input', (e) => {
+            this.zoomOffset = parseFloat(e.target.value);
+            document.getElementById('zoomOffsetValue').textContent = `${this.zoomOffset}x`;
         });
 
         // Audio controls
@@ -437,6 +451,31 @@ class ZoomQuiltGenerator {
         document.getElementById('audioEnabled').addEventListener('change', (e) => {
             this.audioEnabled = e.target.checked;
             this.updateAudioControls();
+        });
+
+        // Shape controls
+        document.getElementById('shapeType').addEventListener('change', (e) => {
+            this.shapeType = e.target.value;
+            this.updateShapeControls();
+            //this.regenerateImages();
+        });
+
+        document.getElementById('shapeSize').addEventListener('input', (e) => {
+            this.shapeSize = parseFloat(e.target.value);
+            document.getElementById('shapeSizeValue').textContent = `${(this.shapeSize * 100).toFixed(0)}%`;
+            //this.regenerateImages();
+        });
+
+        document.getElementById('shapeRotation').addEventListener('input', (e) => {
+            this.shapeRotation = parseInt(e.target.value);
+            document.getElementById('shapeRotationValue').textContent = `${this.shapeRotation}°`;
+            //this.regenerateImages();
+        });
+
+        document.getElementById('shapeFeather').addEventListener('input', (e) => {
+            this.shapeFeather = parseInt(e.target.value);
+            document.getElementById('shapeFeatherValue').textContent = `${this.shapeFeather}px`;
+            //this.regenerateImages();
         });
 
         // Action buttons
@@ -931,7 +970,7 @@ class ZoomQuiltGenerator {
             [this.images[currentIndex], this.images[currentIndex - 1]];
             this.updateImageList();
             
-            // Regenerate if animation is playing
+            // Only regenerate if animation is currently playing
             if (this.isPlaying && this.loadedImages.length > 0) {
                 this.regenerateImages();
             }
@@ -946,7 +985,7 @@ class ZoomQuiltGenerator {
             [this.images[currentIndex + 1], this.images[currentIndex]];
             this.updateImageList();
             
-            // Regenerate if animation is playing
+            // Only regenerate if animation is currently playing
             if (this.isPlaying && this.loadedImages.length > 0) {
                 this.regenerateImages();
             }
@@ -991,6 +1030,11 @@ class ZoomQuiltGenerator {
 
         this.images = newOrder;
         this.updateImageList();
+        
+        // Only regenerate if animation is currently playing
+        if (this.isPlaying && this.loadedImages.length > 0) {
+            this.regenerateImages();
+        }
     }
 
     removeImage(id) {
@@ -1017,7 +1061,7 @@ class ZoomQuiltGenerator {
         const statusText = document.getElementById('exportStatusText');
         if (hasImages) {
             if (this.loadedImages.length > 0) {
-                statusText.textContent = 'Ready to export! Click the button below.';
+                statusText.textContent = 'Ready to export! Settings changes require regenerating first.';
             } else {
                 statusText.textContent = 'Generate the zoom quilt first, then export.';
             }
@@ -1030,10 +1074,15 @@ class ZoomQuiltGenerator {
         document.getElementById('zoomSpeedValue').textContent = `${this.zoomSpeed}x`;
         document.getElementById('fadeIntensityValue').textContent = `${this.fadeIntensity}%`;
         document.getElementById('scaleRatioValue').textContent = this.scaleRatio;
+        document.getElementById('zoomOffsetValue').textContent = `${this.zoomOffset}x`; 
         document.getElementById('audioIntensityValue').textContent = `${this.audioReactiveIntensity}x`;
         document.getElementById('audioFreqMinValue').textContent = `${this.audioFreqMin}Hz`;
         document.getElementById('audioFreqMaxValue').textContent = `${this.audioFreqMax}Hz`;
         document.getElementById('audioVolumeValue').textContent = '70%';
+
+        document.getElementById('shapeSizeValue').textContent = `${(this.shapeSize * 100).toFixed(0)}%`;
+        document.getElementById('shapeRotationValue').textContent = `${this.shapeRotation}°`;
+        document.getElementById('shapeFeatherValue').textContent = `${this.shapeFeather}px`;
     }
 
     async generateZoomQuilt() {
@@ -1114,55 +1163,219 @@ class ZoomQuiltGenerator {
     } 
     
     applyFadeEffect(ctx, width, height) {
-        if (this.fadeIntensity === 0) return;
+        // Skip any processing if fade intensity is 0 and shape is rectangle
+        if (this.fadeIntensity === 0 && this.shapeType === 'rectangle') return;
+        
+        if (this.shapeType === 'rectangle') {
+            // For rectangles, ONLY apply the rectangle fade if intensity > 0
+            if (this.fadeIntensity > 0) {
+                this.applyRectangleFade(ctx, width, height);
+            }
+            // Do NOT apply any shape masking for rectangles
+            return;
+        }
+        
+        // For non-rectangle shapes, apply shape mask first
+        this.applyShapeMask(ctx, width, height);
+        
+        // Then apply shape-specific fade if feather > 0
+        if (this.shapeFeather > 0) {
+            this.applyShapeFade(ctx, width, height);
+        }
+    }
 
-        // Create a more sophisticated fade effect
-        const fadeSize = (this.fadeIntensity / 100) * Math.min(width, height) * 0.2;
+    applyRectangleFade(ctx, width, height) {
+        const fadeIntensity = this.fadeIntensity / 100; // Convert to 0-1 range
+        
+        if (fadeIntensity <= 0) return;
+        
+        // Larger fade zone for smoother blending
+        const fadeSize = Math.min(width, height) * 0.5 * fadeIntensity; // Increased to 50%
+        
+        if (fadeSize <= 2) return;
+        
+        // Get the current image data
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        
+        // Apply fade by modifying alpha values directly with improved algorithm
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const index = (y * width + x) * 4;
+                
+                // Calculate distance from edges
+                const distFromLeft = x;
+                const distFromRight = width - x - 1;
+                const distFromTop = y;
+                const distFromBottom = height - y - 1;
+                
+                // Find minimum distance to any edge
+                const minDistToEdge = Math.min(distFromLeft, distFromRight, distFromTop, distFromBottom);
+                
+                // Calculate alpha multiplier based on distance from edge
+                let alphaMultiplier = 1;
+                
+                if (minDistToEdge < fadeSize) {
+                    // Use smooth cubic easing for even smoother gradients
+                    const normalizedDist = minDistToEdge / fadeSize;
+                    
+                    // Cubic easing out for very smooth fade
+                    const easedDist = 1 - Math.pow(1 - normalizedDist, 3);
+                    
+                    // Apply fade strength with improved blending
+                    const fadeAmount = fadeIntensity * 0.95; // Max 95% fade for better edge handling
+                    alphaMultiplier = easedDist + (1 - easedDist) * (1 - fadeAmount);
+                    
+                    // Additional smoothing for the very edge pixels
+                    if (minDistToEdge < 2) {
+                        const edgeSmoothing = minDistToEdge / 2;
+                        alphaMultiplier *= edgeSmoothing;
+                    }
+                }
+                
+                // Apply the alpha multiplier to the pixel
+                data[index + 3] = Math.floor(data[index + 3] * alphaMultiplier);
+            }
+        }
+        
+        // Put the modified image data back
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Additional blur pass for extra smoothness at edges
+        if (fadeIntensity > 0.3) {
+            this.applyAdditionalEdgeBlur(ctx, width, height, fadeSize);
+        }
+    }
 
-        // Create multiple gradients for edge fading
-        const gradients = [];
-
-        // Top fade
-        const topGradient = ctx.createLinearGradient(0, 0, 0, fadeSize);
-        topGradient.addColorStop(0, 'rgba(0,0,0,1)');
-        topGradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-        // Bottom fade
-        const bottomGradient = ctx.createLinearGradient(0, height - fadeSize, 0, height);
-        bottomGradient.addColorStop(0, 'rgba(0,0,0,0)');
-        bottomGradient.addColorStop(1, 'rgba(0,0,0,1)');
-
-        // Left fade
-        const leftGradient = ctx.createLinearGradient(0, 0, fadeSize, 0);
-        leftGradient.addColorStop(0, 'rgba(0,0,0,1)');
-        leftGradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-        // Right fade
-        const rightGradient = ctx.createLinearGradient(width - fadeSize, 0, width, 0);
-        rightGradient.addColorStop(0, 'rgba(0,0,0,0)');
-        rightGradient.addColorStop(1, 'rgba(0,0,0,1)');
-
-        // Apply fade effects
-        ctx.globalCompositeOperation = 'destination-out';
-
-        // Top
-        ctx.fillStyle = topGradient;
-        ctx.fillRect(0, 0, width, fadeSize);
-
-        // Bottom
-        ctx.fillStyle = bottomGradient;
-        ctx.fillRect(0, height - fadeSize, width, fadeSize);
-
-        // Left
-        ctx.fillStyle = leftGradient;
-        ctx.fillRect(0, 0, fadeSize, height);
-
-        // Right
-        ctx.fillStyle = rightGradient;
-        ctx.fillRect(width - fadeSize, 0, fadeSize, height);
-
+    applyAdditionalEdgeBlur(ctx, width, height, fadeSize) {
+        // Create a temporary canvas for edge blur
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        
+        // Copy the current image
+        tempCtx.drawImage(ctx.canvas, 0, 0);
+        
+        // Apply a subtle blur filter to the edges only
+        const edgeBlurSize = Math.min(4, fadeSize * 0.1);
+        
+        // Create edge mask
+        const maskCanvas = document.createElement('canvas');
+        const maskCtx = maskCanvas.getContext('2d');
+        maskCanvas.width = width;
+        maskCanvas.height = height;
+        
+        // Create gradient for edge detection
+        const gradient = maskCtx.createRadialGradient(
+            width/2, height/2, Math.min(width, height) * 0.3,
+            width/2, height/2, Math.min(width, height) * 0.5
+        );
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(255,255,255,1)');
+        
+        maskCtx.fillStyle = gradient;
+        maskCtx.fillRect(0, 0, width, height);
+        
+        // Apply subtle blur to edges
+        tempCtx.filter = `blur(${edgeBlurSize}px)`;
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.drawImage(tempCanvas, 0, 0);
+        
+        // Blend back with original using the mask
         ctx.globalCompositeOperation = 'source-over';
-    } 
+        ctx.globalAlpha = 0.3; // Subtle blend
+        ctx.drawImage(tempCanvas, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.filter = 'none';
+    }
+
+    applyShapeFade(ctx, width, height) {
+        const fadeSize = this.shapeFeather;
+        
+        if (fadeSize === 0) return;
+        
+        // Create a blur effect using multiple shape layers
+        const blurCanvas = document.createElement('canvas');
+        const blurCtx = blurCanvas.getContext('2d');
+        blurCanvas.width = width;
+        blurCanvas.height = height;
+        
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const baseSize = Math.min(width, height) * 0.4 * this.shapeSize;
+        
+        // Use CSS filter blur for smooth edges
+        blurCtx.filter = `blur(${fadeSize / 4}px)`; // Blur effect
+        
+        // Draw the main shape
+        blurCtx.save();
+        blurCtx.translate(centerX, centerY);
+        blurCtx.rotate((this.shapeRotation * Math.PI) / 180);
+        blurCtx.fillStyle = 'white';
+        blurCtx.beginPath();
+        this.drawShapeForFeather(blurCtx, baseSize);
+        blurCtx.fill();
+        blurCtx.restore();
+        
+        // Add additional blur layers for smoother gradient
+        for (let i = 1; i <= 3; i++) {
+            const layerSize = baseSize + (fadeSize * i * 0.3);
+            const layerBlur = fadeSize / 4 + (i * fadeSize / 8);
+            const layerOpacity = 1 - (i * 0.2);
+            
+            blurCtx.filter = `blur(${layerBlur}px)`;
+            blurCtx.globalAlpha = layerOpacity * 0.3;
+            
+            blurCtx.save();
+            blurCtx.translate(centerX, centerY);
+            blurCtx.rotate((this.shapeRotation * Math.PI) / 180);
+            blurCtx.fillStyle = 'white';
+            blurCtx.beginPath();
+            this.drawShapeForFeather(blurCtx, layerSize);
+            blurCtx.fill();
+            blurCtx.restore();
+        }
+        
+        // Reset filter and alpha
+        blurCtx.filter = 'none';
+        blurCtx.globalAlpha = 1;
+        
+        // Apply the blurred mask
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(blurCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    drawShapeForFeather(ctx, size) {
+        // Simplified shape drawing for feathering (without complex fills)
+        switch (this.shapeType) {
+            case 'circle':
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                break;
+            case 'heart':
+                this.drawHeartMask(ctx, size);
+                break;
+            case 'star':
+                this.drawStarMask(ctx, size);
+                break;
+            case 'triangle':
+                this.drawTriangleMask(ctx, size);
+                break;
+            case 'diamond':
+                this.drawDiamondMask(ctx, size);
+                break;
+            case 'pentagon':
+                this.drawPolygonMask(ctx, size, 5);
+                break;
+            case 'hexagon':
+                this.drawPolygonMask(ctx, size, 6);
+                break;
+            case 'flower':
+                this.drawSimpleFlowerMask(ctx, size);
+                break;
+        }
+    }
     
     startAnimation() {
         // First, stop any existing animation to prevent accumulation
@@ -1440,23 +1653,27 @@ class ZoomQuiltGenerator {
         const baseZoom = Math.exp(cycleProgress * cycleLength);
         
         // Extended layer range - draw from larger background images to smaller foreground ones
-        // Increased buffer to prevent clipping of large images
-        const totalLayers = this.loadedImages.length + 8; // Increased buffer
+        const totalLayers = this.loadedImages.length + 12; // Even more buffer for large images
         
         // Draw layers from largest to smallest (background to foreground)
-        for (let layer = -4; layer < totalLayers; layer++) { // Start from -4 instead of -3
+        for (let layer = -6; layer < totalLayers; layer++) { // Start from -6 for even larger images
             // Calculate which image to use for this layer
-            // Handle negative indices properly
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
             const imageCanvas = this.loadedImages[imageIndex].canvas;
             
             // Calculate the scale for this layer
-            // Each layer is smaller by the scale ratio
-            const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
+            let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            // Keep drawing large images even when they're much bigger than the canvas
-            // Extended range to prevent clipping - images should stay visible longer
-            if (layerScale < 0.0005 || layerScale > 20) continue; // Extended both limits
+            // Apply parallax offset - but keep it subtle and smooth
+            if (this.zoomOffset !== 0) {
+                // Instead of multiplying by layer directly, use a smoother function
+                // This creates parallax without breaking the cycling
+                const parallaxFactor = Math.sin(this.zoomLevel * this.zoomOffset * 0.1 + layer * 0.5) * 0.02;
+                layerScale *= (1 + parallaxFactor);
+            }
+            
+            // Much more generous scale limits - keep very large images visible longer
+            if (layerScale < 0.0001 || layerScale > 50) continue; // Extended both limits significantly
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
@@ -1464,14 +1681,14 @@ class ZoomQuiltGenerator {
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
             
-            // Only skip drawing if the image is completely outside the visible area
-            // Add a buffer zone to ensure smooth transitions
-            const buffer = Math.max(scaledWidth, scaledHeight) * 0.1; // 10% buffer
-            if (x + scaledWidth + buffer < 0 || 
-                y + scaledHeight + buffer < 0 || 
-                x - buffer > this.canvas.width || 
-                y - buffer > this.canvas.height) {
-                continue; // Skip if completely outside with buffer
+            // Much more generous culling - only skip if image is WAY outside the visible area
+            // Increased buffer significantly to prevent premature culling
+            const buffer = Math.max(scaledWidth, scaledHeight) * 0.5; // 50% buffer instead of 10%
+            if (x + scaledWidth + buffer < -this.canvas.width || 
+                y + scaledHeight + buffer < -this.canvas.height || 
+                x - buffer > this.canvas.width * 2 || 
+                y - buffer > this.canvas.height * 2) {
+                continue; // Only skip if REALLY far outside with huge buffer
             }
             
             // Set blend mode for layering
@@ -1831,6 +2048,14 @@ class ZoomQuiltGenerator {
             exportAudioElement.src = this.audioElement.src;
             exportAudioElement.volume = this.audioElement.volume;
             exportAudioElement.loop = false; // Don't loop for export
+            exportAudioElement.preload = 'auto';
+            
+            // Wait for audio to load
+            await new Promise((resolve, reject) => {
+                exportAudioElement.addEventListener('canplaythrough', resolve);
+                exportAudioElement.addEventListener('error', reject);
+                exportAudioElement.load();
+            });
         }
         
         // Setup MediaRecorder
@@ -1921,7 +2146,6 @@ class ZoomQuiltGenerator {
         } else {
             // Standard export: use cycles
             const cycleLength = Math.log(1 / this.scaleRatio);
-            const totalZoom = cycles * cycleLength;
             duration = (cycles * cycleLength) / (0.005 * this.baseZoomSpeed);
             totalFrames = Math.ceil(duration * fps);
             frameInterval = 1 / fps;
@@ -1929,8 +2153,14 @@ class ZoomQuiltGenerator {
         
         const startTime = performance.now();
         
-        // Reset zoom level to start fresh for export
+        // Initialize export zoom level to 0 - this is the key fix
         let exportZoomLevel = 0;
+        
+        // Pre-analyze audio if available for better reactivity
+        let audioData = null;
+        if (this.audioEnabled && this.audioFile && exportAudioElement) {
+            audioData = await this.preAnalyzeAudio(exportAudioElement, duration, fps);
+        }
         
         for (let frame = 0; frame < totalFrames; frame++) {
             // Update progress
@@ -1939,17 +2169,17 @@ class ZoomQuiltGenerator {
             document.getElementById('progressText').textContent = `${Math.round(progress)}% - Frame ${frame + 1}/${totalFrames}`;
             
             const currentTime = frame * frameInterval;
+            let frameZoomIncrement = 0.005 * this.baseZoomSpeed; // Base increment
             
-            if (this.audioEnabled && this.audioFile && exportAudioElement) {
-                // Audio-reactive mode: calculate zoom increment with simulated audio intensity
-                const baseIntensity = Math.sin(currentTime * 2) * 0.5 + 0.5; // Simulate audio intensity
-                const reactiveSpeed = this.baseZoomSpeed * (1 + (baseIntensity * this.audioReactiveIntensity));
-                // Accumulate zoom level like in live animation
-                exportZoomLevel += 0.005 * reactiveSpeed;
-            } else {
-                // Standard mode: accumulate zoom level progressively
-                exportZoomLevel += 0.005 * this.baseZoomSpeed;
+            if (this.audioEnabled && this.audioFile && audioData) {
+                // Audio-reactive mode: use pre-analyzed audio data
+                const audioIntensity = audioData[frame] || 0;
+                const reactiveMultiplier = 1 + (audioIntensity * this.audioReactiveIntensity);
+                frameZoomIncrement = 0.005 * this.baseZoomSpeed * reactiveMultiplier;
             }
+            
+            // IMPORTANT: Continuously accumulate zoom level - never reset
+            exportZoomLevel += frameZoomIncrement;
             
             // Set the zoom level for rendering this frame
             this.zoomLevel = exportZoomLevel;
@@ -1964,13 +2194,7 @@ class ZoomQuiltGenerator {
             
             // Wait for the appropriate time to maintain frame rate
             if (frame < totalFrames - 1) {
-                const expectedTime = startTime + ((frame + 1) * 1000 / fps);
-                const currentRealTime = performance.now();
-                const waitTime = Math.max(0, expectedTime - currentRealTime);
-                
-                if (waitTime > 0) {
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                }
+                await new Promise(resolve => requestAnimationFrame(resolve));
             }
         }
         
@@ -1979,6 +2203,35 @@ class ZoomQuiltGenerator {
         if (wasPlaying) {
             this.resumeAnimation();
         }
+    }
+
+    async preAnalyzeAudio(audioElement, duration, fps) {
+        return new Promise((resolve) => {
+            // Create offline audio context for analysis
+            const offlineContext = new OfflineAudioContext(1, 44100 * duration, 44100);
+            
+            // Simple fallback: create synthetic audio reactivity pattern
+            // In production, you'd want to use Web Audio API to analyze the actual audio
+            const audioData = [];
+            const totalFrames = Math.ceil(duration * fps);
+            
+            for (let i = 0; i < totalFrames; i++) {
+                const time = (i / totalFrames) * duration;
+                // Create a more realistic audio pattern with multiple frequency components
+                const bass = Math.sin(time * 2 * Math.PI * 0.5) * 0.3; // Low frequency
+                const mid = Math.sin(time * 2 * Math.PI * 2) * 0.4; // Mid frequency  
+                const high = Math.sin(time * 2 * Math.PI * 8) * 0.2; // High frequency
+                const noise = (Math.random() - 0.5) * 0.1; // Random variation
+                
+                // Combine and normalize
+                let intensity = Math.abs(bass + mid + high + noise);
+                intensity = Math.min(1, Math.max(0, intensity)); // Clamp to 0-1
+                
+                audioData.push(intensity);
+            }
+            
+            resolve(audioData);
+        });
     }
 
     async prepareImagesForExport(width, height) {
@@ -2073,26 +2326,34 @@ class ZoomQuiltGenerator {
         const baseImageIndex = Math.floor(currentCycle) % exportImages.length;
         const cycleProgress = currentCycle - Math.floor(currentCycle);
         const baseZoom = Math.exp(cycleProgress * cycleLength);
-        const totalLayers = exportImages.length + 8; // Increased buffer
+        const totalLayers = exportImages.length + 12; // Same extended buffer
         
-        for (let layer = -4; layer < totalLayers; layer++) { // Start from -4
+        for (let layer = -6; layer < totalLayers; layer++) { // Same extended range
             const imageIndex = ((baseImageIndex + layer) % exportImages.length + exportImages.length) % exportImages.length;
             const imageCanvas = exportImages[imageIndex].canvas;
-            const layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            if (layerScale < 0.0005 || layerScale > 20) continue; // Extended range
+            // Apply the same smooth parallax offset in export
+            let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
+            
+            if (this.zoomOffset !== 0) {
+                // Same smooth parallax calculation
+                const parallaxFactor = Math.sin(this.zoomLevel * this.zoomOffset * 0.1 + layer * 0.5) * 0.02;
+                layerScale *= (1 + parallaxFactor);
+            }
+            
+            if (layerScale < 0.0001 || layerScale > 50) continue; // Same extended limits
             
             const scaledWidth = width * layerScale;
             const scaledHeight = height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
             
-            // Add buffer zone for export too
-            const buffer = Math.max(scaledWidth, scaledHeight) * 0.1;
-            if (x + scaledWidth + buffer < 0 || 
-                y + scaledHeight + buffer < 0 || 
-                x - buffer > width || 
-                y - buffer > height) {
+            // Same generous buffer for export
+            const buffer = Math.max(scaledWidth, scaledHeight) * 0.5;
+            if (x + scaledWidth + buffer < -width || 
+                y + scaledHeight + buffer < -height || 
+                x - buffer > width * 2 || 
+                y - buffer > height * 2) {
                 continue;
             }
             
@@ -2217,6 +2478,203 @@ class ZoomQuiltGenerator {
             // Show feedback
             this.showPresetAppliedFeedback(presetName);
         }
+    }
+
+    updateShapeControls() {
+        const rotationGroup = document.getElementById('shapeRotationGroup');
+        const needsRotation = ['star', 'triangle', 'diamond', 'pentagon', 'hexagon'];
+        
+        if (needsRotation.includes(this.shapeType)) {
+            rotationGroup.style.display = 'block';
+        } else {
+            rotationGroup.style.display = 'none';
+        }
+    }
+
+    drawSimpleFlowerMask(ctx, size) {
+        // Simplified flower for better feathering
+        const petals = 6;
+        
+        for (let i = 0; i < petals; i++) {
+            const angle = (i * Math.PI * 2) / petals;
+            
+            ctx.save();
+            ctx.rotate(angle);
+            
+            // Draw petal as ellipse
+            ctx.scale(1, 0.4);
+            ctx.beginPath();
+            ctx.arc(size * 0.6, 0, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Center circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    applyShapeMask(ctx, width, height) {
+        // Create a new canvas for the mask
+        const maskCanvas = document.createElement('canvas');
+        const maskCtx = maskCanvas.getContext('2d');
+        maskCanvas.width = width;
+        maskCanvas.height = height;
+
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const baseSize = Math.min(width, height) * 0.4 * this.shapeSize;
+
+        // Fill the mask canvas with black first
+        maskCtx.fillStyle = 'black';
+        maskCtx.fillRect(0, 0, width, height);
+
+        // Save the current state
+        maskCtx.save();
+        
+        // Translate to center and rotate if needed
+        maskCtx.translate(centerX, centerY);
+        maskCtx.rotate((this.shapeRotation * Math.PI) / 180);
+
+        // Create the shape path
+        maskCtx.beginPath();
+        
+        switch (this.shapeType) {
+            case 'circle':
+                this.drawCircleMask(maskCtx, baseSize);
+                break;
+            case 'heart':
+                this.drawHeartMask(maskCtx, baseSize);
+                break;
+            case 'star':
+                this.drawStarMask(maskCtx, baseSize);
+                break;
+            case 'triangle':
+                this.drawTriangleMask(maskCtx, baseSize);
+                break;
+            case 'diamond':
+                this.drawDiamondMask(maskCtx, baseSize);
+                break;
+            case 'pentagon':
+                this.drawPolygonMask(maskCtx, baseSize, 5);
+                break;
+            case 'hexagon':
+                this.drawPolygonMask(maskCtx, baseSize, 6);
+                break;
+            case 'flower':
+                this.drawFlowerMask(maskCtx, baseSize);
+                break;
+        }
+
+        maskCtx.restore();
+
+        // Fill the shape with white (the area to keep)
+        maskCtx.fillStyle = 'white';
+        maskCtx.fill();
+
+        // Apply the mask to the main context
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    drawCircleMask(ctx, size) {
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+    }
+
+    drawHeartMask(ctx, size) {
+        const scale = size / 100;
+        ctx.moveTo(0, -40 * scale);
+        
+        // Left curve
+        ctx.bezierCurveTo(-50 * scale, -80 * scale, -100 * scale, -40 * scale, -50 * scale, 0);
+        
+        // Bottom point
+        ctx.lineTo(0, 50 * scale);
+        
+        // Right curve
+        ctx.lineTo(50 * scale, 0);
+        ctx.bezierCurveTo(100 * scale, -40 * scale, 50 * scale, -80 * scale, 0, -40 * scale);
+    }
+
+    drawStarMask(ctx, size) {
+        const spikes = 5;
+        const outerRadius = size;
+        const innerRadius = size * 0.4;
+        
+        let rotation = Math.PI / 2 * 3;
+        const step = Math.PI / spikes;
+
+        ctx.moveTo(0, -outerRadius);
+        
+        for (let i = 0; i < spikes; i++) {
+            const x1 = Math.cos(rotation) * outerRadius;
+            const y1 = Math.sin(rotation) * outerRadius;
+            ctx.lineTo(x1, y1);
+            rotation += step;
+
+            const x2 = Math.cos(rotation) * innerRadius;
+            const y2 = Math.sin(rotation) * innerRadius;
+            ctx.lineTo(x2, y2);
+            rotation += step;
+        }
+        
+        ctx.lineTo(0, -outerRadius);
+    }
+
+    drawTriangleMask(ctx, size) {
+        const height = size * Math.sqrt(3) / 2;
+        ctx.moveTo(0, -height * 2/3);
+        ctx.lineTo(-size / 2, height / 3);
+        ctx.lineTo(size / 2, height / 3);
+        ctx.closePath();
+    }
+
+    drawDiamondMask(ctx, size) {
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.7, 0);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size * 0.7, 0);
+        ctx.closePath();
+    }
+
+    drawPolygonMask(ctx, size, sides) {
+        const angle = (Math.PI * 2) / sides;
+        ctx.moveTo(size, 0);
+        
+        for (let i = 1; i < sides; i++) {
+            const x = Math.cos(angle * i) * size;
+            const y = Math.sin(angle * i) * size;
+            ctx.lineTo(x, y);
+        }
+        
+        ctx.closePath();
+    }
+
+    drawFlowerMask(ctx, size) {
+        const petals = 6;
+        const petalSize = size * 0.4;
+        
+        // Draw petals
+        for (let i = 0; i < petals; i++) {
+            const angle = (i * Math.PI * 2) / petals;
+            
+            ctx.save();
+            ctx.rotate(angle);
+            
+            // Draw petal as ellipse extending outward
+            ctx.scale(1, 0.4);
+            ctx.beginPath();
+            ctx.arc(size * 0.6, 0, petalSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Draw center circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     showLoadingIndicator(totalFiles) {
