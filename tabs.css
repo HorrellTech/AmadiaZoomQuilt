@@ -330,24 +330,6 @@ input:checked + .toggle-slider:before {
     }
 }
 
-/* Fade Controls Group */
-.fade-controls {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.fade-controls::before {
-    content: "🌫️ Fade & Blur Effects";
-    display: block;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    color: var(--accent);
-    font-size: 0.9rem;
-}
-
 /* Image Rotation Controls Styling */
 .image-rotation-controls {
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -359,7 +341,7 @@ input:checked + .toggle-slider:before {
 }
 
 .image-rotation-controls::before {
-    content: "🔄 Image Content Rotation";
+    content: "Image Content Rotation";
     display: block;
     font-weight: bold;
     margin-bottom: 1rem;
@@ -384,4 +366,159 @@ input:checked + .toggle-slider:before {
 /* Visual separation for rotation groups */
 .control-group input[type="checkbox"] + small {
     margin-left: 24px;
+}
+
+/* Rotation Group Styling */
+.rotation-group {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    transition: all 0.3s ease;
+}
+
+.rotation-group:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+}
+
+.rotation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rotation-header h3 {
+    margin: 0;
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.rotation-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s ease;
+    pointer-events: auto !important; /* Always clickable */
+    z-index: 10; /* Ensure it's above other elements */
+}
+
+.rotation-toggle:hover {
+    color: var(--accent);
+}
+
+.rotation-toggle input[type="checkbox"] {
+    transform: scale(1.2);
+    margin: 0;
+    pointer-events: auto !important; /* Always clickable */
+    cursor: pointer;
+}
+
+/* Ensure checkbox is never disabled by CSS */
+.rotation-toggle input[type="checkbox"]:disabled {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.rotation-description {
+    margin: 0.5rem 0 1rem 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.rotation-controls {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* When disabled, only affect the controls, not the header */
+.rotation-group.disabled .rotation-controls {
+    opacity: 0.5;
+}
+
+/* Don't disable the header or toggle */
+.rotation-group.disabled .rotation-header {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.rotation-group.disabled .rotation-toggle {
+    opacity: 1;
+    pointer-events: auto !important;
+}
+
+.rotation-mode-group {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+}
+
+/* Specific styling for different rotation types */
+.shape-rotation-group {
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.image-rotation-group {
+    border-color: rgba(118, 75, 162, 0.3);
+}
+
+/* Better spacing for nested controls */
+.rotation-controls .controls-grid {
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.rotation-controls .control-group small {
+    margin-top: 0.25rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+}
+
+/* Disabled state styling - only for controls inside rotation-controls */
+.rotation-group.disabled .rotation-controls input:not([type="checkbox"]),
+.rotation-group.disabled .rotation-controls select {
+    background: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+/* Animation for showing/hiding mode groups */
+.rotation-mode-group {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.rotation-mode-group[style*="display: none"] {
+    display: none !important;
+}
+
+/* Improve the fade controls to match */
+.fade-controls {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+}
+
+.fade-controls::before {
+    content: "🌫️ Fade & Blur Effects";
+    display: block;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    font-size: 1.1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }

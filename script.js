@@ -1028,13 +1028,69 @@ class ZoomQuiltGenerator {
         }
     }
 
+    updateImageRotationControls() {
+        const imageGroup = document.querySelector('.image-rotation-group');
+        const imageProgressiveGroup = document.getElementById('imageProgressiveRotationGroup');
+        const imageRandomGroup = document.getElementById('imageRandomRotationGroup');
+        const imageFixedGroup = document.getElementById('imageRotationGroup');
+        
+        // Toggle the entire group's enabled state
+        if (imageGroup) {
+            if (this.imageRotationEnabled) {
+                imageGroup.classList.remove('disabled');
+                imageGroup.classList.add('enabled');
+            } else {
+                imageGroup.classList.add('disabled');
+                imageGroup.classList.remove('enabled');
+            }
+        }
+        
+        // Enable/disable controls but NOT the main checkbox
+        const imageRotationControls = document.querySelector('.image-rotation-group .rotation-controls');
+        if (imageRotationControls) {
+            const inputs = imageRotationControls.querySelectorAll('input:not([type="checkbox"]), select');
+            inputs.forEach(input => {
+                input.disabled = !this.imageRotationEnabled;
+            });
+        }
+
+        // Show/hide specific mode controls
+        const isEnabled = this.imageRotationEnabled;
+        
+        if (imageProgressiveGroup) imageProgressiveGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'progressive') ? 'block' : 'none';
+        
+        if (imageRandomGroup) imageRandomGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
+        
+        if (imageFixedGroup) imageFixedGroup.style.display = 
+            (isEnabled && this.imageRotationMode === 'fixed') ? 'block' : 'none';
+        
+        // Ensure the main checkbox is NEVER disabled
+        const mainCheckbox = document.getElementById('imageRotationEnabled');
+        if (mainCheckbox) {
+            mainCheckbox.disabled = false;
+        }
+    }
+
     updateRotationControls() {
+        const shapeGroup = document.querySelector('.shape-rotation-group');
         const progressiveGroup = document.getElementById('progressiveRotationGroup');
         const randomGroup = document.getElementById('randomRotationGroup');
-        const randomGroup2 = document.getElementById('randomRotationGroup2'); // Add this line
         const fixedGroup = document.getElementById('shapeRotationGroup');
         
-        // Show/hide controls based on rotation mode and if shape rotation is enabled
+        // Toggle the entire group's enabled state
+        if (shapeGroup) {
+            if (this.shapeRotationEnabled) {
+                shapeGroup.classList.remove('disabled');
+                shapeGroup.classList.add('enabled');
+            } else {
+                shapeGroup.classList.add('disabled');
+                shapeGroup.classList.remove('enabled');
+            }
+        }
+        
+        // Show/hide controls based on rotation mode
         const isEnabled = this.shapeRotationEnabled;
         
         if (progressiveGroup) progressiveGroup.style.display = 
@@ -1043,21 +1099,44 @@ class ZoomQuiltGenerator {
         if (randomGroup) randomGroup.style.display = 
             (isEnabled && this.rotationMode === 'random') ? 'block' : 'none';
         
-        if (randomGroup2) randomGroup2.style.display = 
-            (isEnabled && this.rotationMode === 'random') ? 'block' : 'none';
-        
         if (fixedGroup) fixedGroup.style.display = 
             (isEnabled && this.rotationMode === 'fixed') ? 'block' : 'none';
 
-        // Enable/disable the rotation mode selector
-        const rotationModeSelect = document.getElementById('rotationMode');
-        if (rotationModeSelect) {
-            rotationModeSelect.disabled = !isEnabled;
+        // Enable/disable controls but NOT the main checkbox
+        const rotationControls = document.querySelector('.shape-rotation-group .rotation-controls');
+        if (rotationControls) {
+            const inputs = rotationControls.querySelectorAll('input:not([type="checkbox"]), select');
+            inputs.forEach(input => {
+                input.disabled = !isEnabled;
+            });
+        }
+        
+        // Ensure the main checkbox is NEVER disabled
+        const mainCheckbox = document.getElementById('shapeRotationEnabled');
+        if (mainCheckbox) {
+            mainCheckbox.disabled = false;
         }
     }
 
     updateImageRotationControls() {
-        const imageRotationControls = document.querySelector('.image-rotation-controls');
+        const imageGroup = document.querySelector('.image-rotation-group');
+        const imageProgressiveGroup = document.getElementById('imageProgressiveRotationGroup');
+        const imageRandomGroup = document.getElementById('imageRandomRotationGroup');
+        const imageFixedGroup = document.getElementById('imageRotationGroup');
+        
+        // Toggle the entire group's enabled state
+        if (imageGroup) {
+            if (this.imageRotationEnabled) {
+                imageGroup.classList.remove('disabled');
+                imageGroup.classList.add('enabled');
+            } else {
+                imageGroup.classList.add('disabled');
+                imageGroup.classList.remove('enabled');
+            }
+        }
+        
+        // Enable/disable all controls in the group
+        const imageRotationControls = document.querySelector('.image-rotation-group .rotation-controls');
         if (imageRotationControls) {
             const inputs = imageRotationControls.querySelectorAll('input:not([type="checkbox"]), select');
             inputs.forEach(input => {
@@ -1067,21 +1146,13 @@ class ZoomQuiltGenerator {
             });
         }
 
-        // Show/hide specific image rotation mode controls
-        const imageProgressiveGroup = document.getElementById('imageProgressiveRotationGroup');
-        const imageRandomGroup = document.getElementById('imageRandomRotationGroup');
-        const imageRandomGroup2 = document.getElementById('imageRandomRotationGroup2'); // Add this line
-        const imageFixedGroup = document.getElementById('imageRotationGroup');
-        
+        // Show/hide specific mode controls
         const isEnabled = this.imageRotationEnabled;
         
         if (imageProgressiveGroup) imageProgressiveGroup.style.display = 
             (isEnabled && this.imageRotationMode === 'progressive') ? 'block' : 'none';
         
         if (imageRandomGroup) imageRandomGroup.style.display = 
-            (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
-        
-        if (imageRandomGroup2) imageRandomGroup2.style.display = 
             (isEnabled && this.imageRotationMode === 'random') ? 'block' : 'none';
         
         if (imageFixedGroup) imageFixedGroup.style.display = 
@@ -2334,7 +2405,10 @@ class ZoomQuiltGenerator {
         // Extended layer range - draw from larger background images to smaller foreground ones
         const totalLayers = this.loadedImages.length + 12;
         
-        // Draw layers from largest to smallest (background to foreground)
+        // Create array to store all visible layers with their properties
+        const visibleLayers = [];
+        
+        // First pass: collect all visible layers
         for (let layer = -6; layer < totalLayers; layer++) {
             // Calculate which image to use for this layer
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
@@ -2345,20 +2419,14 @@ class ZoomQuiltGenerator {
             
             // Apply smoothed parallax offset to prevent jumping
             if (this.zoomOffset !== 0) {
-                // Use a much smoother function that wraps properly at cycle boundaries
-                // This eliminates the jumping by ensuring continuity
                 const smoothPhase = this.zoomLevel * this.zoomOffset * 0.1;
-                const layerPhase = layer * 0.3; // Reduced from 0.5 for smoother transitions
+                const layerPhase = layer * 0.3;
                 
-                // Use a combination of sine and cosine for smoother transitions
-                const parallaxFactorA = Math.sin(smoothPhase + layerPhase) * 0.01; // Reduced intensity
-                const parallaxFactorB = Math.cos(smoothPhase * 1.3 + layerPhase * 0.7) * 0.005; // Secondary wave
+                const parallaxFactorA = Math.sin(smoothPhase + layerPhase) * 0.01;
+                const parallaxFactorB = Math.cos(smoothPhase * 1.3 + layerPhase * 0.7) * 0.005;
                 
-                // Combine and apply with smoothing near cycle boundaries
                 const combinedFactor = parallaxFactorA + parallaxFactorB;
                 
-                // Add smoothing factor that reduces parallax effect near cycle boundaries
-                // This prevents abrupt changes when images cycle
                 const cycleBoundarySmoothing = Math.min(1, 
                     Math.min(cycleProgress * 10, (1 - cycleProgress) * 10)
                 );
@@ -2367,14 +2435,46 @@ class ZoomQuiltGenerator {
                 layerScale *= (1 + smoothedParallaxFactor);
             }
             
-            // More generous scale limits
-            if (layerScale < 0.0001 || layerScale > 50) continue;
+            // More generous scale limits for fade calculation
+            if (layerScale < 0.0001 || layerScale > 100) continue;
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
             const scaledHeight = this.canvas.height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
+            
+            // Calculate alpha based on scale for smooth fade-out
+            let alpha = 1.0;
+            
+            // Fade out when images get too large (approaching the foreground)
+            const fadeStartScale = 15; // Start fading at 15x canvas size
+            const fadeEndScale = 50;   // Completely faded at 50x canvas size
+            
+            if (layerScale > fadeStartScale) {
+                // Calculate fade progress (0 = fully visible, 1 = fully transparent)
+                const fadeProgress = Math.min(1, (layerScale - fadeStartScale) / (fadeEndScale - fadeStartScale));
+                
+                // Apply smooth easing to the fade
+                const easedFade = 1 - Math.pow(1 - fadeProgress, 2); // Quadratic ease-out
+                alpha = 1 - easedFade;
+                
+                // If completely transparent, skip this layer
+                if (alpha <= 0.01) continue;
+            }
+            
+            // Also fade out when images get too small (disappearing into background)
+            const smallFadeStartScale = 0.001;
+            const smallFadeEndScale = 0.01;
+            
+            if (layerScale < smallFadeEndScale) {
+                const smallFadeProgress = Math.max(0, (layerScale - smallFadeStartScale) / (smallFadeEndScale - smallFadeStartScale));
+                const easedSmallFade = Math.pow(smallFadeProgress, 0.5); // Square root ease-in
+                alpha = Math.min(alpha, easedSmallFade);
+                
+                // If completely transparent, skip this layer
+                if (alpha <= 0.01) continue;
+            }
             
             // Generous culling with large buffer
             const buffer = Math.max(scaledWidth, scaledHeight) * 0.5;
@@ -2385,19 +2485,156 @@ class ZoomQuiltGenerator {
                 continue;
             }
             
-            // Set blend mode for layering
-            this.ctx.globalCompositeOperation = this.blendMode;
-            
-            // Use image smoothing for better quality when scaling
+            // Store this layer for rendering
+            visibleLayers.push({
+                imageCanvas,
+                x,
+                y,
+                scaledWidth,
+                scaledHeight,
+                layerScale,
+                layer,
+                imageIndex,
+                alpha // Add alpha for smooth fading
+            });
+        }
+        
+        // Second pass: render layers with proper blending and fading
+        this.renderBlendedLayersWithFading(visibleLayers);
+    }
+
+    renderBlendedLayersWithFading(visibleLayers) {
+        if (visibleLayers.length === 0) return;
+        
+        // Sort layers by scale (largest to smallest for proper depth)
+        visibleLayers.sort((a, b) => b.layerScale - a.layerScale);
+        
+        if (this.blendMode === 'normal') {
+            // For normal blend mode, use simple layering with alpha
             this.ctx.imageSmoothingEnabled = true;
             this.ctx.imageSmoothingQuality = 'high';
             
-            // Draw the scaled image
-            this.ctx.drawImage(imageCanvas, x, y, scaledWidth, scaledHeight);
+            visibleLayers.forEach(layer => {
+                this.ctx.globalAlpha = layer.alpha;
+                this.ctx.globalCompositeOperation = 'source-over';
+                this.ctx.drawImage(layer.imageCanvas, layer.x, layer.y, layer.scaledWidth, layer.scaledHeight);
+            });
+            
+            // Reset alpha
+            this.ctx.globalAlpha = 1.0;
+            return;
         }
         
-        // Reset blend mode
+        // For other blend modes, create composite blending with fading
+        if (visibleLayers.length === 1) {
+            // Single layer - just draw it with alpha
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.ctx.imageSmoothingEnabled = true;
+            this.ctx.imageSmoothingQuality = 'high';
+            this.ctx.globalAlpha = visibleLayers[0].alpha;
+            this.ctx.drawImage(visibleLayers[0].imageCanvas, 
+                visibleLayers[0].x, visibleLayers[0].y, 
+                visibleLayers[0].scaledWidth, visibleLayers[0].scaledHeight);
+            this.ctx.globalAlpha = 1.0;
+            return;
+        }
+        
+        // Multiple layers - blend them progressively with fading
+        this.renderProgressiveBlendingWithFading(visibleLayers);
+    }
+
+    renderProgressiveBlendingWithFading(visibleLayers) {
+        // Create a temporary canvas for building up the blended result
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = this.canvas.width;
+        tempCanvas.height = this.canvas.height;
+        
+        // Start with the largest (background) layer
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+        
+        const firstLayer = visibleLayers[0];
+        tempCtx.globalAlpha = firstLayer.alpha;
+        tempCtx.drawImage(firstLayer.imageCanvas, 
+            firstLayer.x, firstLayer.y, 
+            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        
+        // Progressively blend each subsequent layer with individual alpha
+        for (let i = 1; i < visibleLayers.length; i++) {
+            const currentLayer = visibleLayers[i];
+            
+            // Create a canvas for this layer
+            const layerCanvas = document.createElement('canvas');
+            const layerCtx = layerCanvas.getContext('2d');
+            layerCanvas.width = this.canvas.width;
+            layerCanvas.height = this.canvas.height;
+            
+            // Draw the current layer with its alpha
+            layerCtx.globalCompositeOperation = 'source-over';
+            layerCtx.imageSmoothingEnabled = true;
+            layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.globalAlpha = currentLayer.alpha;
+            layerCtx.drawImage(currentLayer.imageCanvas, 
+                currentLayer.x, currentLayer.y, 
+                currentLayer.scaledWidth, currentLayer.scaledHeight);
+            
+            // Apply the blend mode to combine with previous layers
+            tempCtx.globalAlpha = 1.0; // Reset alpha for blending
+            tempCtx.globalCompositeOperation = this.blendMode;
+            tempCtx.drawImage(layerCanvas, 0, 0);
+        }
+        
+        // Draw the final blended result to the main canvas
         this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.drawImage(tempCanvas, 0, 0);
+    }
+
+    renderProgressiveBlending(visibleLayers) {
+        // Create a temporary canvas for building up the blended result
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = this.canvas.width;
+        tempCanvas.height = this.canvas.height;
+        
+        // Start with the largest (background) layer
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+        
+        const firstLayer = visibleLayers[0];
+        tempCtx.drawImage(firstLayer.imageCanvas, 
+            firstLayer.x, firstLayer.y, 
+            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        
+        // Progressively blend each subsequent layer
+        for (let i = 1; i < visibleLayers.length; i++) {
+            const currentLayer = visibleLayers[i];
+            
+            // Create a canvas for this layer
+            const layerCanvas = document.createElement('canvas');
+            const layerCtx = layerCanvas.getContext('2d');
+            layerCanvas.width = this.canvas.width;
+            layerCanvas.height = this.canvas.height;
+            
+            // Draw the current layer
+            layerCtx.globalCompositeOperation = 'source-over';
+            layerCtx.imageSmoothingEnabled = true;
+            layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.drawImage(currentLayer.imageCanvas, 
+                currentLayer.x, currentLayer.y, 
+                currentLayer.scaledWidth, currentLayer.scaledHeight);
+            
+            // Apply the blend mode to combine with previous layers
+            tempCtx.globalCompositeOperation = this.blendMode;
+            tempCtx.drawImage(layerCanvas, 0, 0);
+        }
+        
+        // Draw the final blended result to the main canvas
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.drawImage(tempCanvas, 0, 0);
     }
 
     previewZoomQuilt() {
@@ -3022,6 +3259,168 @@ class ZoomQuiltGenerator {
         return average / 255;
     }
 
+    renderBlendedLayersToCanvas(ctx, visibleLayers, width, height) {
+        if (visibleLayers.length === 0) return;
+        
+        // Sort layers by scale (largest to smallest for proper depth)
+        visibleLayers.sort((a, b) => b.layerScale - a.layerScale);
+        
+        if (this.blendMode === 'normal') {
+            // For normal blend mode, use simple layering
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            visibleLayers.forEach(layer => {
+                ctx.drawImage(layer.imageCanvas, 
+                    0, 0, layer.imageCanvas.width, layer.imageCanvas.height,
+                    layer.x, layer.y, layer.scaledWidth, layer.scaledHeight);
+            });
+            return;
+        }
+        
+        // For other blend modes, create composite blending
+        if (visibleLayers.length === 1) {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(visibleLayers[0].imageCanvas, 
+                0, 0, visibleLayers[0].imageCanvas.width, visibleLayers[0].imageCanvas.height,
+                visibleLayers[0].x, visibleLayers[0].y, 
+                visibleLayers[0].scaledWidth, visibleLayers[0].scaledHeight);
+            return;
+        }
+        
+        // Multiple layers - blend them progressively for export
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        
+        // Start with the largest layer
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+        
+        const firstLayer = visibleLayers[0];
+        tempCtx.drawImage(firstLayer.imageCanvas, 
+            0, 0, firstLayer.imageCanvas.width, firstLayer.imageCanvas.height,
+            firstLayer.x, firstLayer.y, 
+            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        
+        // Progressively blend each subsequent layer
+        for (let i = 1; i < visibleLayers.length; i++) {
+            const currentLayer = visibleLayers[i];
+            
+            const layerCanvas = document.createElement('canvas');
+            const layerCtx = layerCanvas.getContext('2d');
+            layerCanvas.width = width;
+            layerCanvas.height = height;
+            
+            layerCtx.globalCompositeOperation = 'source-over';
+            layerCtx.imageSmoothingEnabled = true;
+            layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.drawImage(currentLayer.imageCanvas, 
+                0, 0, currentLayer.imageCanvas.width, currentLayer.imageCanvas.height,
+                currentLayer.x, currentLayer.y, 
+                currentLayer.scaledWidth, currentLayer.scaledHeight);
+            
+            // Apply the blend mode
+            tempCtx.globalCompositeOperation = this.blendMode;
+            tempCtx.drawImage(layerCanvas, 0, 0);
+        }
+        
+        // Draw the final result
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(tempCanvas, 0, 0);
+    }
+
+    renderBlendedLayersToCanvasWithFading(ctx, visibleLayers, width, height) {
+        if (visibleLayers.length === 0) return;
+        
+        // Sort layers by scale (largest to smallest for proper depth)
+        visibleLayers.sort((a, b) => b.layerScale - a.layerScale);
+        
+        if (this.blendMode === 'normal') {
+            // For normal blend mode, use simple layering with alpha
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            visibleLayers.forEach(layer => {
+                ctx.globalAlpha = layer.alpha;
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(layer.imageCanvas, 
+                    0, 0, layer.imageCanvas.width, layer.imageCanvas.height,
+                    layer.x, layer.y, layer.scaledWidth, layer.scaledHeight);
+            });
+            
+            // Reset alpha
+            ctx.globalAlpha = 1.0;
+            return;
+        }
+        
+        // For other blend modes, create composite blending with fading
+        if (visibleLayers.length === 1) {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.globalAlpha = visibleLayers[0].alpha;
+            ctx.drawImage(visibleLayers[0].imageCanvas, 
+                0, 0, visibleLayers[0].imageCanvas.width, visibleLayers[0].imageCanvas.height,
+                visibleLayers[0].x, visibleLayers[0].y, 
+                visibleLayers[0].scaledWidth, visibleLayers[0].scaledHeight);
+            ctx.globalAlpha = 1.0;
+            return;
+        }
+        
+        // Multiple layers - blend them progressively with fading for export
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        
+        // Start with the largest layer
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+        
+        const firstLayer = visibleLayers[0];
+        tempCtx.globalAlpha = firstLayer.alpha;
+        tempCtx.drawImage(firstLayer.imageCanvas, 
+            0, 0, firstLayer.imageCanvas.width, firstLayer.imageCanvas.height,
+            firstLayer.x, firstLayer.y, 
+            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        
+        // Progressively blend each subsequent layer with fading
+        for (let i = 1; i < visibleLayers.length; i++) {
+            const currentLayer = visibleLayers[i];
+            
+            const layerCanvas = document.createElement('canvas');
+            const layerCtx = layerCanvas.getContext('2d');
+            layerCanvas.width = width;
+            layerCanvas.height = height;
+            
+            layerCtx.globalCompositeOperation = 'source-over';
+            layerCtx.imageSmoothingEnabled = true;
+            layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.globalAlpha = currentLayer.alpha;
+            layerCtx.drawImage(currentLayer.imageCanvas, 
+                0, 0, currentLayer.imageCanvas.width, currentLayer.imageCanvas.height,
+                currentLayer.x, currentLayer.y, 
+                currentLayer.scaledWidth, currentLayer.scaledHeight);
+            
+            // Apply the blend mode
+            tempCtx.globalAlpha = 1.0;
+            tempCtx.globalCompositeOperation = this.blendMode;
+            tempCtx.drawImage(layerCanvas, 0, 0);
+        }
+        
+        // Draw the final result
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(tempCanvas, 0, 0);
+    }
+
     drawZoomQuiltFrameToExportCanvas(ctx, width, height, exportImages) {
         const centerX = width / 2;
         const centerY = height / 2;
@@ -3034,29 +3433,68 @@ class ZoomQuiltGenerator {
         const baseImageIndex = Math.floor(currentCycle) % exportImages.length;
         const cycleProgress = currentCycle - Math.floor(currentCycle);
         const baseZoom = Math.exp(cycleProgress * cycleLength);
-        const totalLayers = exportImages.length + 12; // Same extended buffer
+        const totalLayers = exportImages.length + 12;
         
-        for (let layer = -6; layer < totalLayers; layer++) { // Same extended range
+        // Collect visible layers for export with fading
+        const visibleLayers = [];
+        
+        for (let layer = -6; layer < totalLayers; layer++) {
             const imageIndex = ((baseImageIndex + layer) % exportImages.length + exportImages.length) % exportImages.length;
             const imageCanvas = exportImages[imageIndex].canvas;
             
-            // Apply the same smooth parallax offset in export
             let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
             if (this.zoomOffset !== 0) {
-                // Same smooth parallax calculation
-                const parallaxFactor = Math.sin(this.zoomLevel * this.zoomOffset * 0.1 + layer * 0.5) * 0.02;
-                layerScale *= (1 + parallaxFactor);
+                const smoothPhase = this.zoomLevel * this.zoomOffset * 0.1;
+                const layerPhase = layer * 0.3;
+                
+                const parallaxFactorA = Math.sin(smoothPhase + layerPhase) * 0.01;
+                const parallaxFactorB = Math.cos(smoothPhase * 1.3 + layerPhase * 0.7) * 0.005;
+                
+                const combinedFactor = parallaxFactorA + parallaxFactorB;
+                
+                const cycleBoundarySmoothing = Math.min(1, 
+                    Math.min(cycleProgress * 10, (1 - cycleProgress) * 10)
+                );
+                
+                const smoothedParallaxFactor = combinedFactor * cycleBoundarySmoothing;
+                layerScale *= (1 + smoothedParallaxFactor);
             }
             
-            if (layerScale < 0.0001 || layerScale > 50) continue; // Same extended limits
+            if (layerScale < 0.0001 || layerScale > 100) continue;
             
             const scaledWidth = width * layerScale;
             const scaledHeight = height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
             
-            // Same generous buffer for export
+            // Calculate alpha for export (same logic as main rendering)
+            let alpha = 1.0;
+            
+            // Fade out when images get too large
+            const fadeStartScale = 15;
+            const fadeEndScale = 50;
+            
+            if (layerScale > fadeStartScale) {
+                const fadeProgress = Math.min(1, (layerScale - fadeStartScale) / (fadeEndScale - fadeStartScale));
+                const easedFade = 1 - Math.pow(1 - fadeProgress, 2);
+                alpha = 1 - easedFade;
+                
+                if (alpha <= 0.01) continue;
+            }
+            
+            // Fade out when images get too small
+            const smallFadeStartScale = 0.001;
+            const smallFadeEndScale = 0.01;
+            
+            if (layerScale < smallFadeEndScale) {
+                const smallFadeProgress = Math.max(0, (layerScale - smallFadeStartScale) / (smallFadeEndScale - smallFadeStartScale));
+                const easedSmallFade = Math.pow(smallFadeProgress, 0.5);
+                alpha = Math.min(alpha, easedSmallFade);
+                
+                if (alpha <= 0.01) continue;
+            }
+            
             const buffer = Math.max(scaledWidth, scaledHeight) * 0.5;
             if (x + scaledWidth + buffer < -width || 
                 y + scaledHeight + buffer < -height || 
@@ -3065,18 +3503,21 @@ class ZoomQuiltGenerator {
                 continue;
             }
             
-            ctx.globalCompositeOperation = this.blendMode;
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            // Draw the image scaled for export resolution
-            ctx.drawImage(imageCanvas, 
-                0, 0, imageCanvas.width, imageCanvas.height,
-                x, y, scaledWidth, scaledHeight
-            );
+            visibleLayers.push({
+                imageCanvas,
+                x,
+                y,
+                scaledWidth,
+                scaledHeight,
+                layerScale,
+                layer,
+                imageIndex,
+                alpha
+            });
         }
         
-        ctx.globalCompositeOperation = 'source-over';
+        // Render with proper blending and fading for export
+        this.renderBlendedLayersToCanvasWithFading(ctx, visibleLayers, width, height);
     }
 
     async exportAsGIF(cycles, fps, resolution) {

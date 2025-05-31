@@ -139,96 +139,107 @@
                             </div>
                         </div>
 
-                        <!-- Shape Rotation Controls -->
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="shapeRotationEnabled" checked>
-                                Enable Shape Rotation
-                            </label>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="rotationMode">Rotation Mode</label>
-                            <select id="rotationMode">
-                                <option value="fixed">Fixed Rotation</option>
-                                <option value="progressive">Progressive Rotation</option>
-                                <option value="random">Random Rotation</option>
-                            </select>
-                        </div>
-
-                        <!-- Fixed rotation (existing control) -->
-                        <div class="control-group" id="shapeRotationGroup">
-                            <label for="shapeRotation">Base Rotation (0° - 360°)</label>
-                            <input type="range" id="shapeRotation" min="0" max="360" value="0" step="1">
-                            <span class="value-display" id="shapeRotationValue">0°</span>
-                        </div>
-
-                        <!-- Progressive rotation controls -->
-                        <div class="control-group" id="progressiveRotationGroup" style="display: none;">
-                            <label for="progressiveRotationStep">Progressive Step</label>
-                            <input type="range" id="progressiveRotationStep" min="1" max="90" value="15" step="1">
-                            <span class="value-display" id="progressiveRotationStepValue">15°</span>
-                            <small>Rotation increase per image</small>
-                        </div>
-
-                        <!-- Random rotation controls -->
-                        <div class="control-group" id="randomRotationGroup" style="display: none;">
-                            <label for="randomRotationMin">Random Min</label>
-                            <input type="range" id="randomRotationMin" min="0" max="360" value="0" step="1">
-                            <span class="value-display" id="randomRotationMinValue">0°</span>
-                        </div>
-
-                        <div class="control-group" id="randomRotationGroup2" style="display: none;">
-                            <label for="randomRotationMax">Random Max</label>
-                            <input type="range" id="randomRotationMax" min="0" max="360" value="360" step="1">
-                            <span class="value-display" id="randomRotationMaxValue">360°</span>
-                        </div>
-
-                        <!-- Image Rotation Controls -->
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="imageRotationEnabled">
-                                Enable Image Content Rotation
-                            </label>
-                            <small>Rotates the actual image content (separate from shape cutout rotation)</small>
-                        </div>
-
-                        <div class="image-rotation-controls">
-                            <div class="control-group">
-                                <label for="imageRotationMode">Image Rotation Mode</label>
-                                <select id="imageRotationMode">
-                                    <option value="fixed">Fixed Rotation</option>
-                                    <option value="progressive">Progressive Rotation</option>
-                                    <option value="random">Random Rotation</option>
-                                </select>
+                        <!-- Shape Rotation Controls Group -->
+                        <div class="rotation-group shape-rotation-group">
+                            <div class="rotation-header">
+                                <h3>🔄 Shape Rotation</h3>
+                                <label class="rotation-toggle">
+                                    <input type="checkbox" id="shapeRotationEnabled" checked>
+                                    <span>Enable</span>
+                                </label>
                             </div>
+                            <p class="rotation-description">Controls how the shape cutout rotates</p>
 
-                            <!-- Fixed image rotation -->
-                            <div class="control-group" id="imageRotationGroup">
-                                <label for="imageRotation">Base Image Rotation</label>
-                                <input type="range" id="imageRotation" min="0" max="360" value="0" step="1">
-                                <span class="value-display" id="imageRotationValue">0°</span>
+                            <div class="rotation-controls">
+                                <div class="control-group">
+                                    <label for="rotationMode">Rotation Mode</label>
+                                    <select id="rotationMode">
+                                        <option value="fixed">Fixed Rotation</option>
+                                        <option value="progressive">Progressive Rotation</option>
+                                        <option value="random">Random Rotation</option>
+                                    </select>
+                                </div>
+
+                                <!-- Fixed rotation -->
+                                <div class="control-group rotation-mode-group" id="shapeRotationGroup">
+                                    <label for="shapeRotation">Base Rotation</label>
+                                    <input type="range" id="shapeRotation" min="0" max="360" value="0" step="1">
+                                    <span class="value-display" id="shapeRotationValue">0°</span>
+                                </div>
+
+                                <!-- Progressive rotation -->
+                                <div class="control-group rotation-mode-group" id="progressiveRotationGroup" style="display: none;">
+                                    <label for="progressiveRotationStep">Progressive Step</label>
+                                    <input type="range" id="progressiveRotationStep" min="1" max="90" value="15" step="1">
+                                    <span class="value-display" id="progressiveRotationStepValue">15°</span>
+                                    <small>Rotation increase per image</small>
+                                </div>
+
+                                <!-- Random rotation -->
+                                <div class="controls-grid rotation-mode-group" id="randomRotationGroup" style="display: none;">
+                                    <div class="control-group">
+                                        <label for="randomRotationMin">Random Min</label>
+                                        <input type="range" id="randomRotationMin" min="0" max="360" value="0" step="1">
+                                        <span class="value-display" id="randomRotationMinValue">0°</span>
+                                    </div>
+                                    <div class="control-group">
+                                        <label for="randomRotationMax">Random Max</label>
+                                        <input type="range" id="randomRotationMax" min="0" max="360" value="360" step="1">
+                                        <span class="value-display" id="randomRotationMaxValue">360°</span>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-                            <!-- Progressive image rotation -->
-                            <div class="control-group" id="imageProgressiveRotationGroup" style="display: none;">
-                                <label for="imageProgressiveRotationStep">Progressive Step</label>
-                                <input type="range" id="imageProgressiveRotationStep" min="1" max="90" value="10" step="1">
-                                <span class="value-display" id="imageProgressiveRotationStepValue">10°</span>
-                                <small>Image rotation increase per image</small>
+                        <!-- Image Content Rotation Controls Group -->
+                        <div class="rotation-group image-rotation-group">
+                            <div class="rotation-header">
+                                <h3>🖼️ Image Content Rotation</h3>
+                                <label class="rotation-toggle">
+                                    <input type="checkbox" id="imageRotationEnabled">
+                                    <span>Enable</span>
+                                </label>
                             </div>
+                            <p class="rotation-description">Controls how the actual image content rotates (independent of shape)</p>
 
-                            <!-- Random image rotation -->
-                            <div class="control-group" id="imageRandomRotationGroup" style="display: none;">
-                                <label for="imageRandomRotationMin">Random Min</label>
-                                <input type="range" id="imageRandomRotationMin" min="0" max="360" value="0" step="1">
-                                <span class="value-display" id="imageRandomRotationMinValue">0°</span>
-                            </div>
+                            <div class="rotation-controls">
+                                <div class="control-group">
+                                    <label for="imageRotationMode">Image Rotation Mode</label>
+                                    <select id="imageRotationMode">
+                                        <option value="fixed">Fixed Rotation</option>
+                                        <option value="progressive">Progressive Rotation</option>
+                                        <option value="random">Random Rotation</option>
+                                    </select>
+                                </div>
 
-                            <div class="control-group" id="imageRandomRotationGroup2" style="display: none;">
-                                <label for="imageRandomRotationMax">Random Max</label>
-                                <input type="range" id="imageRandomRotationMax" min="0" max="360" value="360" step="1">
-                                <span class="value-display" id="imageRandomRotationMaxValue">360°</span>
+                                <!-- Fixed image rotation -->
+                                <div class="control-group rotation-mode-group" id="imageRotationGroup">
+                                    <label for="imageRotation">Base Image Rotation</label>
+                                    <input type="range" id="imageRotation" min="0" max="360" value="0" step="1">
+                                    <span class="value-display" id="imageRotationValue">0°</span>
+                                </div>
+
+                                <!-- Progressive image rotation -->
+                                <div class="control-group rotation-mode-group" id="imageProgressiveRotationGroup" style="display: none;">
+                                    <label for="imageProgressiveRotationStep">Progressive Step</label>
+                                    <input type="range" id="imageProgressiveRotationStep" min="1" max="90" value="10" step="1">
+                                    <span class="value-display" id="imageProgressiveRotationStepValue">10°</span>
+                                    <small>Image rotation increase per image</small>
+                                </div>
+
+                                <!-- Random image rotation -->
+                                <div class="controls-grid rotation-mode-group" id="imageRandomRotationGroup" style="display: none;">
+                                    <div class="control-group">
+                                        <label for="imageRandomRotationMin">Random Min</label>
+                                        <input type="range" id="imageRandomRotationMin" min="0" max="360" value="0" step="1">
+                                        <span class="value-display" id="imageRandomRotationMinValue">0°</span>
+                                    </div>
+                                    <div class="control-group">
+                                        <label for="imageRandomRotationMax">Random Max</label>
+                                        <input type="range" id="imageRandomRotationMax" min="0" max="360" value="360" step="1">
+                                        <span class="value-display" id="imageRandomRotationMaxValue">360°</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
