@@ -14,6 +14,9 @@ class ZoomQuiltGenerator {
         this.canvas = null;
         this.ctx = null;
         this.loadedImages = [];
+
+        // Initialize HTML5 Exporter
+        this.html5Exporter = null;
         
         // Canvas settings
         this.canvasWidth = 800;
@@ -102,6 +105,20 @@ class ZoomQuiltGenerator {
         // Load saved mode preference
         const savedMode = localStorage.getItem('zoomQuiltMode') || 'simple';
         this.setMode(savedMode);
+    
+        // Initialize HTML5 Exporter after script loads
+        this.initializeHTML5Exporter();
+    }
+
+    initializeHTML5Exporter() {
+        // Initialize the HTML5 exporter when available
+        if (typeof HTML5Exporter !== 'undefined') {
+            this.html5Exporter = new HTML5Exporter(this);
+            window.html5Exporter = this.html5Exporter; // Make it globally available
+        } else {
+            // Retry after a short delay if not loaded yet
+            setTimeout(() => this.initializeHTML5Exporter(), 100);
+        }
     }
 
     setupCanvasSizeControls() {
@@ -3048,7 +3065,7 @@ class ZoomQuiltGenerator {
             </div>
         ` : '';
 
-        // Create modal HTML
+        // Create modal HTML with HTML5 option
         const modalHtml = `
             <div class="modal-overlay" id="exportModal">
                 <div class="modal-content">
@@ -3059,9 +3076,27 @@ class ZoomQuiltGenerator {
                     <div class="modal-body">
                         ${audioReactiveInfo}
                         
-                        <div class="export-options">
+                        <div class="export-format-selection">
+                            <h4>Choose Export Format</h4>
+                            <div class="format-options">
+                                <div class="format-option" onclick="zoomQuilt.selectExportFormat('video')">
+                                    <div class="format-icon">🎬</div>
+                                    <h5>Video Export</h5>
+                                    <p>Create MP4, WebM, or GIF animations</p>
+                                    <small>Best for social media and presentations</small>
+                                </div>
+                                <div class="format-option" onclick="zoomQuilt.selectExportFormat('html5')">
+                                    <div class="format-icon">🌐</div>
+                                    <h5>HTML5 Package</h5>
+                                    <p>Interactive web application</p>
+                                    <small>Perfect for embedding in websites</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="video-export-options" id="videoExportOptions" style="display: none;">
                             <div class="option-group">
-                                <label for="exportFormat">Export Format</label>
+                                <label for="exportFormat">Video Format</label>
                                 <select id="exportFormat">
                                     <option value="webm">WebM (Recommended)</option>
                                     <option value="mp4">MP4</option>
@@ -3097,21 +3132,22 @@ class ZoomQuiltGenerator {
                                     <option value="640x480">640×480 (SD)</option>
                                 </select>
                             </div>
-                        </div>
-                        
-                        <div class="export-info">
-                            <p id="exportEstimate">Calculating...</p>
-                            <div class="progress-container" id="exportProgress" style="display: none;">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="progressFill"></div>
+                            
+                            <div class="export-info">
+                                <p id="exportEstimate">Calculating...</p>
+                                <div class="progress-container" id="exportProgress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progressFill"></div>
+                                    </div>
+                                    <span id="progressText">0%</span>
                                 </div>
-                                <span id="progressText">0%</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="zoomQuilt.closeExportModal()">Cancel</button>
-                        <button class="btn btn-success" onclick="zoomQuilt.startExport()">🎬 Start Export</button>
+                        
+                        <div class="export-actions" id="exportActions" style="display: none;">
+                            <button class="btn btn-secondary" onclick="zoomQuilt.closeExportModal()">Cancel</button>
+                            <button class="btn btn-success" id="startExportBtn" onclick="zoomQuilt.startSelectedExport()">🎬 Start Export</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3119,12 +3155,38 @@ class ZoomQuiltGenerator {
         
         // Add modal to page
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    selectExportFormat(format) {
+        // Hide format selection
+        document.querySelector('.export-format-selection').style.display = 'none';
         
-        // Setup event listeners for the modal
-        this.setupExportModalListeners();
+        // Show appropriate options
+        if (format === 'video') {
+            document.getElementById('videoExportOptions').style.display = 'block';
+            document.getElementById('startExportBtn').textContent = '🎬 Start Video Export';
+            this.selectedExportFormat = 'video';
+            this.setupExportModalListeners();
+            this.updateExportEstimate();
+        } else if (format === 'html5') {
+            // Close this modal and open HTML5 export modal
+            this.closeExportModal();
+            if (this.html5Exporter) {
+                this.html5Exporter.exportHTML5Package();
+            } else {
+                this.showNotification('HTML5 Exporter not loaded yet. Please try again.', 'warning');
+            }
+            return;
+        }
         
-        // Initial estimate calculation
-        this.updateExportEstimate();
+        // Show action buttons
+        document.getElementById('exportActions').style.display = 'block';
+    }
+
+    startSelectedExport() {
+        if (this.selectedExportFormat === 'video') {
+            this.startExport();
+        }
     }
 
     setupExportModalListeners() {
