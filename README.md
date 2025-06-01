@@ -2,6 +2,8 @@
 
 A web-based application to create mesmerizing infinite zoom animations from your own images, with optional audio reactivity and dynamic visualizers.
 
+https://horrelltech.github.io/AmadiaZoomQuilt/
+
 ---
 
 ## 🚀 Features
