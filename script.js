@@ -8,7 +8,7 @@ class ZoomQuiltGenerator {
         this.zoomSpeed = 0.5;
         this.zoomDirection = 1; // New: -1 to 1, controls zoom direction and speed multiplier
         this.blendMode = 'normal';
-        this.fadeIntensity = 20;
+        this.fadeIntensity = 60;
         this.scaleRatio = 0.1;
         this.zoomOffset = 0; // New parallax offset setting
         this.canvas = null;
@@ -31,14 +31,14 @@ class ZoomQuiltGenerator {
         this.audioSource = null;
         this.audioEnabled = false;
         this.audioReactiveIntensity = 2.0;
-        this.audioFreqMin = 60;
+        this.audioFreqMin = 70;
         this.audioFreqMax = 250;
         this.baseZoomSpeed = 1.0;
 
         this.shapeType = 'rectangle'; // Default shape
         this.shapeSize = 1.0; // Scale factor for shapes
         this.shapeRotation = 0; // Rotation angle for shapes
-        this.shapeFeather = 20; // Feathering/softness of shape edges
+        this.shapeFeather = 70; // Feathering/softness of shape edges
 
         // New rotation options
         this.rotationMode = 'fixed'; // 'fixed', 'random', 'progressive'
