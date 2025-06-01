@@ -52,6 +52,9 @@ class ZoomQuiltGenerator {
         this.imageProgressiveRotationStep = 10; // degrees per image for image rotation
         this.imageRandomRotationMin = 0;
         this.imageRandomRotationMax = 360;
+        // Add rotation progression counter
+        this.rotationCounter = 0; // New counter for progressive rotations
+        this.imageRotationCounter = 0; // Counter for image rotation progression
 
         // Visualizer properties
         this.visualizers = {
@@ -94,6 +97,187 @@ class ZoomQuiltGenerator {
         this.setupAudio();
         this.setupTabs();
         this.setupVisualizerControls();
+        this.setupCanvasSizeControls();
+    
+        // Load saved mode preference
+        const savedMode = localStorage.getItem('zoomQuiltMode') || 'simple';
+        this.setMode(savedMode);
+    }
+
+    setupCanvasSizeControls() {
+        const canvasWidthInput = document.getElementById('canvasWidth');
+        const canvasHeightInput = document.getElementById('canvasHeight');
+        const aspectRatioLockedInput = document.getElementById('aspectRatioLocked');
+        
+        if (canvasWidthInput) {
+            canvasWidthInput.addEventListener('input', (e) => {
+                const newWidth = parseInt(e.target.value);
+                if (this.aspectRatioLocked && aspectRatioLockedInput.checked) {
+                    const aspectRatio = this.canvasWidth / this.canvasHeight;
+                    const newHeight = Math.round(newWidth / aspectRatio);
+                    canvasHeightInput.value = newHeight;
+                    this.setCanvasSize(newWidth, newHeight);
+                } else {
+                    this.setCanvasSize(newWidth, this.canvasHeight);
+                }
+            });
+        }
+        
+        if (canvasHeightInput) {
+            canvasHeightInput.addEventListener('input', (e) => {
+                const newHeight = parseInt(e.target.value);
+                if (this.aspectRatioLocked && aspectRatioLockedInput.checked) {
+                    const aspectRatio = this.canvasWidth / this.canvasHeight;
+                    const newWidth = Math.round(newHeight * aspectRatio);
+                    canvasWidthInput.value = newWidth;
+                    this.setCanvasSize(newWidth, newHeight);
+                } else {
+                    this.setCanvasSize(this.canvasWidth, newHeight);
+                }
+            });
+        }
+    }
+
+    setCanvasSize(width, height) {
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+        
+        // Update canvas dimensions
+        this.canvas.width = width;
+        this.canvas.height = height;
+        
+        // Update input values
+        const canvasWidthInput = document.getElementById('canvasWidth');
+        const canvasHeightInput = document.getElementById('canvasHeight');
+        
+        if (canvasWidthInput) canvasWidthInput.value = width;
+        if (canvasHeightInput) canvasHeightInput.value = height;
+        
+        // Regenerate images for new canvas size if we have any
+        if (this.images.length > 0 && this.isPlaying) {
+            this.regenerateImages();
+        } else if (this.loadedImages.length > 0) {
+            // Redraw current frame with new size
+            this.prepareImages().then(loadedImages => {
+                this.loadedImages = loadedImages;
+                this.drawZoomQuiltFrame();
+            });
+        } else {
+            // Just clear and fill with black
+            this.ctx.clearRect(0, 0, width, height);
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(0, 0, width, height);
+        }
+    }
+
+    setMode(mode) {
+        const mainLayout = document.getElementById('mainLayout');
+        const simpleModeBtn = document.getElementById('simpleModeBtn');
+        const advancedModeBtn = document.getElementById('advancedModeBtn');
+        
+        if (mode === 'simple') {
+            mainLayout.className = 'main-layout simple-mode';
+            simpleModeBtn.classList.add('active');
+            advancedModeBtn.classList.remove('active');
+            
+            // Setup simple mode controls
+            this.setupSimpleModeControls();
+            
+            // Show notification
+            this.showNotification('Simple mode activated - basic controls only', 'info');
+        } else {
+            mainLayout.className = 'main-layout advanced-mode';
+            advancedModeBtn.classList.add('active');
+            simpleModeBtn.classList.remove('active');
+            
+            // Show notification
+            this.showNotification('Advanced mode activated - all controls available', 'info');
+        }
+        
+        // Save preference
+        localStorage.setItem('zoomQuiltMode', mode);
+    }
+
+    setupSimpleModeControls() {
+        // Simple zoom speed control
+        const simpleZoomSpeed = document.getElementById('simpleZoomSpeed');
+        if (simpleZoomSpeed) {
+            simpleZoomSpeed.addEventListener('input', (e) => {
+                this.zoomSpeed = parseFloat(e.target.value);
+                this.baseZoomSpeed = this.zoomSpeed;
+                document.getElementById('simpleZoomSpeedValue').textContent = `${this.zoomSpeed}x`;
+                
+                // Also update the advanced control to keep them in sync
+                const advancedZoomSpeed = document.getElementById('zoomSpeed');
+                if (advancedZoomSpeed) advancedZoomSpeed.value = this.zoomSpeed;
+            });
+        }
+
+        // Simple shape type control
+        const simpleShapeType = document.getElementById('simpleShapeType');
+        if (simpleShapeType) {
+            simpleShapeType.addEventListener('change', (e) => {
+                this.shapeType = e.target.value;
+                
+                // Also update the advanced control
+                const advancedShapeType = document.getElementById('shapeType');
+                if (advancedShapeType) advancedShapeType.value = this.shapeType;
+            });
+        }
+
+        // Simple feather control
+        const simpleFeather = document.getElementById('simpleFeather');
+        if (simpleFeather) {
+            simpleFeather.addEventListener('input', (e) => {
+                this.shapeFeather = parseInt(e.target.value);
+                document.getElementById('simpleFeatherValue').textContent = `${this.shapeFeather}px`;
+                
+                // Also update the advanced control
+                const advancedFeather = document.getElementById('shapeFeather');
+                if (advancedFeather) {
+                    advancedFeather.value = this.shapeFeather;
+                    const advancedValue = document.getElementById('shapeFeatherValue');
+                    if (advancedValue) advancedValue.textContent = `${this.shapeFeather}px`;
+                }
+            });
+        }
+
+        // Simple fade control
+        const simpleFade = document.getElementById('simpleFade');
+        if (simpleFade) {
+            simpleFade.addEventListener('input', (e) => {
+                this.fadeIntensity = parseInt(e.target.value);
+                document.getElementById('simpleFadeValue').textContent = `${this.fadeIntensity}%`;
+                
+                // Also update the advanced control
+                const advancedFade = document.getElementById('fadeIntensity');
+                if (advancedFade) {
+                    advancedFade.value = this.fadeIntensity;
+                    const advancedValue = document.getElementById('fadeIntensityValue');
+                    if (advancedValue) advancedValue.textContent = `${this.fadeIntensity}%`;
+                }
+            });
+        }
+
+        // Set initial values for simple controls
+        if (simpleZoomSpeed) {
+            simpleZoomSpeed.value = this.zoomSpeed;
+            document.getElementById('simpleZoomSpeedValue').textContent = `${this.zoomSpeed}x`;
+        }
+        
+        if (simpleShapeType) {
+            simpleShapeType.value = this.shapeType;
+        }
+        
+        if (simpleFeather) {
+            simpleFeather.value = this.shapeFeather;
+            document.getElementById('simpleFeatherValue').textContent = `${this.shapeFeather}px`;
+        }
+        
+        if (simpleFade) {
+            simpleFade.value = this.fadeIntensity;
+            document.getElementById('simpleFadeValue').textContent = `${this.fadeIntensity}%`;
+        }
     }
 
     setupTabs() {
@@ -893,7 +1077,6 @@ class ZoomQuiltGenerator {
     updateFullscreenButton() {
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const canvasContainer = document.querySelector('.canvas-container');
-        const toolbar = document.querySelector('.canvas-controls');
         
         if (this.isFullscreen()) {
             fullscreenBtn.innerHTML = '🗗 Exit Fullscreen';
@@ -901,10 +1084,8 @@ class ZoomQuiltGenerator {
             canvasContainer.classList.add('fullscreen-active');
             
             // Initialize toolbar auto-hide
-            this.handleMouseActivity(); // Show toolbar initially
+            this.handleMouseActivity();
             
-            // Resize canvas to fill screen while maintaining aspect ratio
-            this.resizeCanvasForFullscreen();
         } else {
             fullscreenBtn.innerHTML = '🗖 Fullscreen';
             fullscreenBtn.title = 'Enter Fullscreen';
@@ -919,11 +1100,15 @@ class ZoomQuiltGenerator {
             // Reset cursor
             document.body.style.cursor = 'default';
             
-            // Reset toolbar styles when exiting fullscreen
+            // Completely reset toolbar styles when exiting fullscreen
+            const toolbar = document.querySelector('.canvas-controls');
             if (toolbar) {
+                // Remove all fullscreen-specific styles
                 toolbar.style.position = '';
                 toolbar.style.bottom = '';
                 toolbar.style.left = '';
+                toolbar.style.right = '';
+                toolbar.style.top = '';
                 toolbar.style.transform = '';
                 toolbar.style.zIndex = '';
                 toolbar.style.background = '';
@@ -932,11 +1117,49 @@ class ZoomQuiltGenerator {
                 toolbar.style.backdropFilter = '';
                 toolbar.style.opacity = '';
                 toolbar.style.pointerEvents = '';
+                toolbar.style.margin = '';
+                toolbar.style.marginTop = '';
+                toolbar.style.display = '';
+                toolbar.style.justifyContent = '';
+                toolbar.style.flexWrap = '';
+                toolbar.style.alignItems = '';
+                toolbar.style.gap = '';
+                
+                // Force return to normal layout
+                toolbar.removeAttribute('style');
             }
             
-            // Restore original canvas size
-            this.restoreCanvasSize();
+            // Reset canvas styles - this is the key fix
+            const canvas = this.canvas;
+            canvas.style.position = '';
+            canvas.style.top = '';
+            canvas.style.left = '';
+            canvas.style.transform = '';
+            canvas.style.zIndex = '';
+            canvas.style.width = '';
+            canvas.style.height = '';
+            canvas.style.maxWidth = '';
+            canvas.style.maxHeight = '';
+            canvas.style.objectFit = '';
+            canvas.style.imageRendering = '';
+            
+            // Restore original canvas dimensions
+            canvas.width = this.canvasWidth;
+            canvas.height = this.canvasHeight;
+            
+            // Redraw current frame at original size
+            if (this.loadedImages.length > 0) {
+                this.drawZoomQuiltFrame();
+            }
         }
+    }
+
+    storeOriginalCanvasDimensions() {
+        // Store the current canvas dimensions before fullscreen
+        this.originalCanvasWidth = this.canvas.width;
+        this.originalCanvasHeight = this.canvas.height;
+        this.originalDisplayWidth = this.canvas.offsetWidth;
+        this.originalDisplayHeight = this.canvas.offsetHeight;
     }
 
     resizeCanvasForFullscreen() {
@@ -1500,47 +1723,40 @@ class ZoomQuiltGenerator {
         }
     }
 
-    calculateRotationForImage(imageIndex) {
+    calculateRotationForImage(rotationIndex) {
         if (!this.shapeRotationEnabled) return 0;
 
         switch (this.rotationMode) {
             case 'fixed':
                 return this.shapeRotation;
-            
             case 'progressive':
-                return this.shapeRotation + (imageIndex * this.progressiveRotationStep);
-            
+                return this.shapeRotation + (rotationIndex * this.progressiveRotationStep);
             case 'random':
-                // Use seeded random based on image index for consistency
-                const seed = imageIndex * 12345;
+                // Ensure random rotation is fixed for a given layer index, not dependent on zoomLevel
+                const seed = rotationIndex * 12345; 
                 const pseudoRandom = Math.sin(seed) * 10000;
                 const normalizedRandom = (pseudoRandom - Math.floor(pseudoRandom));
                 const range = this.randomRotationMax - this.randomRotationMin;
                 return this.randomRotationMin + (normalizedRandom * range);
-            
             default:
                 return this.shapeRotation;
         }
     }
 
-    calculateImageRotationForImage(imageIndex) {
+    calculateImageRotationForImage(rotationIndex) {
         if (!this.imageRotationEnabled) return 0;
 
         switch (this.imageRotationMode) {
             case 'fixed':
                 return this.imageRotation;
-            
             case 'progressive':
-                return this.imageRotation + (imageIndex * this.imageProgressiveRotationStep);
-            
+                return this.imageRotation + (rotationIndex * this.imageProgressiveRotationStep);
             case 'random':
-                // Use different seed for image rotation
-                const seed = imageIndex * 54321;
+                const seed = rotationIndex * 54321;
                 const pseudoRandom = Math.sin(seed) * 10000;
                 const normalizedRandom = (pseudoRandom - Math.floor(pseudoRandom));
                 const range = this.imageRandomRotationMax - this.imageRandomRotationMin;
                 return this.imageRandomRotationMin + (normalizedRandom * range);
-            
             default:
                 return this.imageRotation;
         }
@@ -1551,6 +1767,10 @@ class ZoomQuiltGenerator {
 
         // Stop any existing animation first
         this.pauseAnimation();
+        
+        // ONLY reset rotation counter when explicitly generating - this is the only reset point
+        this.rotationCounter = 0;
+        this.imageRotationCounter = 0;
 
         // Show loading screen on canvas
         this.startCanvasLoadingAnimation();
@@ -1621,6 +1841,8 @@ class ZoomQuiltGenerator {
         const loadedImages = [];
         const totalImages = this.images.length;
 
+        // IMPORTANT: Don't reset rotation counters here - let them continue accumulating
+        
         for (let i = 0; i < this.images.length; i++) {
             const imageData = this.images[i];
             
@@ -1699,12 +1921,12 @@ class ZoomQuiltGenerator {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
-            // Apply image rotation if enabled
-            const imageRotation = this.calculateImageRotationForImage(i);
+            // Use current rotation counters for base rotations during preparation
+            const baseImageRotation = this.calculateImageRotationForImage(i);
             
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate((imageRotation * Math.PI) / 180);
+            ctx.rotate((baseImageRotation * Math.PI) / 180);
 
             // Draw the image centered and rotated
             const x = -scaledWidth / 2;
@@ -1713,16 +1935,19 @@ class ZoomQuiltGenerator {
             
             ctx.restore();
 
-            // Apply fade effect to edges with calculated rotation for shapes
-            const shapeRotation = this.calculateRotationForImage(i);
-            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, shapeRotation);
+            // Apply fade effect with SHAPE rotation always at 0 DEGREES during bake-in.
+            // The actual rotation will be applied dynamically per layer during rendering.
+            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, 0);
 
             loadedImages.push({
                 canvas: canvas,
                 ctx: ctx,
                 originalData: imageData,
-                shapeRotation: shapeRotation,
-                imageRotation: imageRotation
+                // Store the intended base rotations for informational purposes or if needed elsewhere,
+                // but they are not visually baked into the shape's orientation on the canvas anymore.
+                baseShapeRotation: this.calculateRotationForImage(i), // Intended base shape rotation for this image index
+                baseImageRotation: baseImageRotation, // Image content rotation is still baked
+                imageIndex: i 
             });
         }
 
@@ -2143,8 +2368,8 @@ class ZoomQuiltGenerator {
         }
         
         this.isPlaying = true;
-        // Always reset zoom level when generating fresh to prevent accumulation
-        this.zoomLevel = 0;
+        // DON'T reset zoom level here - let it continue from where it was
+        // Only reset zoom level on explicit generate/preview
         document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
         this.animate();
     }
@@ -2400,8 +2625,9 @@ class ZoomQuiltGenerator {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         if (this.loadedImages.length === 0) return;
-        
+
         // Calculate which image should be the "base" (outermost) image
+        const numLoadedImages = this.loadedImages.length;
         const cycleLength = Math.log(1 / this.scaleRatio);
         const currentCycle = this.zoomLevel / cycleLength;
         const baseImageIndex = Math.floor(currentCycle) % this.loadedImages.length;
@@ -2420,7 +2646,7 @@ class ZoomQuiltGenerator {
         for (let layer = -6; layer < totalLayers; layer++) {
             // Calculate which image to use for this layer
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
-            const imageCanvas = this.loadedImages[imageIndex].canvas;
+            const imageToRender = this.loadedImages[imageIndex];
             
             // Calculate the scale for this layer
             let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
@@ -2443,8 +2669,10 @@ class ZoomQuiltGenerator {
                 layerScale *= (1 + smoothedParallaxFactor);
             }
             
-            // More generous scale limits for fade calculation
-            if (layerScale < 0.0001 || layerScale > 100) continue;
+            // Check scale limits
+            if (layerScale < 0.0001 || layerScale > 100) {
+                continue;
+            }
             
             // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
@@ -2468,7 +2696,9 @@ class ZoomQuiltGenerator {
                 alpha = 1 - easedFade;
                 
                 // If completely transparent, skip this layer
-                if (alpha <= 0.01) continue;
+                if (alpha <= 0.01) {
+                    continue;
+                }
             }
             
             // Also fade out when images get too small (disappearing into background)
@@ -2481,7 +2711,9 @@ class ZoomQuiltGenerator {
                 alpha = Math.min(alpha, easedSmallFade);
                 
                 // If completely transparent, skip this layer
-                if (alpha <= 0.01) continue;
+                if (alpha <= 0.01) {
+                    continue;
+                }
             }
             
             // Generous culling with large buffer
@@ -2493,17 +2725,21 @@ class ZoomQuiltGenerator {
                 continue;
             }
             
-            // Store this layer for rendering
+            // Calculate the conceptual index of this layer in the infinite quilt sequence
+            // This index determines its fixed rotation if progressive or random mode is used.
+            const conceptualQuiltLayerIndex = Math.floor(currentCycle) * numLoadedImages + baseImageIndex + layer;
+            
             visibleLayers.push({
-                imageCanvas,
+                imageCanvas: imageToRender.canvas,
                 x,
                 y,
                 scaledWidth,
                 scaledHeight,
                 layerScale,
-                layer,
-                imageIndex,
-                alpha // Add alpha for smooth fading
+                layer, // Relative layer depth for parallax or other effects
+                imageIndex, // Index of the source image in this.loadedImages
+                alpha,
+                layerRotationIndex: conceptualQuiltLayerIndex // Used for calculateRotationForImage
             });
         }
         
@@ -2514,87 +2750,113 @@ class ZoomQuiltGenerator {
     renderBlendedLayersWithFading(visibleLayers) {
         if (visibleLayers.length === 0) return;
         
-        // Sort layers by scale (largest to smallest for proper depth)
         visibleLayers.sort((a, b) => b.layerScale - a.layerScale);
         
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
+
         if (this.blendMode === 'normal') {
-            // For normal blend mode, use simple layering with alpha
-            this.ctx.imageSmoothingEnabled = true;
-            this.ctx.imageSmoothingQuality = 'high';
-            
             visibleLayers.forEach(layer => {
                 this.ctx.globalAlpha = layer.alpha;
                 this.ctx.globalCompositeOperation = 'source-over';
-                this.ctx.drawImage(layer.imageCanvas, layer.x, layer.y, layer.scaledWidth, layer.scaledHeight);
+                
+                this.ctx.save();
+                this.ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
+                const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
+                this.ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+                this.ctx.drawImage(
+                    layer.imageCanvas,
+                    -layer.scaledWidth / 2,
+                    -layer.scaledHeight / 2,
+                    layer.scaledWidth,
+                    layer.scaledHeight
+                );
+                this.ctx.restore();
             });
-            
-            // Reset alpha
             this.ctx.globalAlpha = 1.0;
             return;
         }
         
-        // For other blend modes, create composite blending with fading
         if (visibleLayers.length === 1) {
-            // Single layer - just draw it with alpha
+            const layer = visibleLayers[0];
             this.ctx.globalCompositeOperation = 'source-over';
-            this.ctx.imageSmoothingEnabled = true;
-            this.ctx.imageSmoothingQuality = 'high';
-            this.ctx.globalAlpha = visibleLayers[0].alpha;
-            this.ctx.drawImage(visibleLayers[0].imageCanvas, 
-                visibleLayers[0].x, visibleLayers[0].y, 
-                visibleLayers[0].scaledWidth, visibleLayers[0].scaledHeight);
+            this.ctx.globalAlpha = layer.alpha;
+
+            this.ctx.save();
+            this.ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
+            const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
+            this.ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+            this.ctx.drawImage(
+                layer.imageCanvas,
+                -layer.scaledWidth / 2,
+                -layer.scaledHeight / 2,
+                layer.scaledWidth,
+                layer.scaledHeight
+            );
+            this.ctx.restore();
+            
             this.ctx.globalAlpha = 1.0;
             return;
         }
         
-        // Multiple layers - blend them progressively with fading
         this.renderProgressiveBlendingWithFading(visibleLayers);
     }
 
     renderProgressiveBlendingWithFading(visibleLayers) {
-        // Create a temporary canvas for building up the blended result
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = this.canvas.width;
         tempCanvas.height = this.canvas.height;
         
-        // Start with the largest (background) layer
-        tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.imageSmoothingEnabled = true;
         tempCtx.imageSmoothingQuality = 'high';
         
         const firstLayer = visibleLayers[0];
+        tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.globalAlpha = firstLayer.alpha;
-        tempCtx.drawImage(firstLayer.imageCanvas, 
-            firstLayer.x, firstLayer.y, 
-            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        tempCtx.save();
+        tempCtx.translate(firstLayer.x + firstLayer.scaledWidth / 2, firstLayer.y + firstLayer.scaledHeight / 2);
+        const firstLayerShapeRotation = this.calculateRotationForImage(firstLayer.layerRotationIndex);
+        tempCtx.rotate((firstLayerShapeRotation * Math.PI) / 180);
+        tempCtx.drawImage(
+            firstLayer.imageCanvas,
+            -firstLayer.scaledWidth / 2,
+            -firstLayer.scaledHeight / 2,
+            firstLayer.scaledWidth,
+            firstLayer.scaledHeight
+        );
+        tempCtx.restore();
         
-        // Progressively blend each subsequent layer with individual alpha
         for (let i = 1; i < visibleLayers.length; i++) {
             const currentLayer = visibleLayers[i];
-            
-            // Create a canvas for this layer
             const layerCanvas = document.createElement('canvas');
             const layerCtx = layerCanvas.getContext('2d');
             layerCanvas.width = this.canvas.width;
             layerCanvas.height = this.canvas.height;
             
-            // Draw the current layer with its alpha
-            layerCtx.globalCompositeOperation = 'source-over';
             layerCtx.imageSmoothingEnabled = true;
             layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.globalCompositeOperation = 'source-over';
             layerCtx.globalAlpha = currentLayer.alpha;
-            layerCtx.drawImage(currentLayer.imageCanvas, 
-                currentLayer.x, currentLayer.y, 
-                currentLayer.scaledWidth, currentLayer.scaledHeight);
+
+            layerCtx.save();
+            layerCtx.translate(currentLayer.x + currentLayer.scaledWidth / 2, currentLayer.y + currentLayer.scaledHeight / 2);
+            const currentLayerShapeRotation = this.calculateRotationForImage(currentLayer.layerRotationIndex);
+            layerCtx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+            layerCtx.drawImage(
+                currentLayer.imageCanvas,
+                -currentLayer.scaledWidth / 2,
+                -currentLayer.scaledHeight / 2,
+                currentLayer.scaledWidth,
+                currentLayer.scaledHeight
+            );
+            layerCtx.restore();
             
-            // Apply the blend mode to combine with previous layers
-            tempCtx.globalAlpha = 1.0; // Reset alpha for blending
+            tempCtx.globalAlpha = 1.0; 
             tempCtx.globalCompositeOperation = this.blendMode;
             tempCtx.drawImage(layerCanvas, 0, 0);
         }
         
-        // Draw the final blended result to the main canvas
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.globalAlpha = 1.0;
         this.ctx.drawImage(tempCanvas, 0, 0);
@@ -2645,11 +2907,15 @@ class ZoomQuiltGenerator {
         this.ctx.drawImage(tempCanvas, 0, 0);
     }
 
-    previewZoomQuilt() {
+    async previewZoomQuilt() {
         if (this.images.length === 0) return;
 
         // Stop any existing animation first
         this.pauseAnimation();
+
+        // ONLY reset rotation counter when explicitly previewing - like generate
+        this.rotationCounter = 0;
+        this.imageRotationCounter = 0;
         
         // Generate a single frame preview
         this.generateZoomQuilt();
@@ -2700,6 +2966,10 @@ class ZoomQuiltGenerator {
     resetAnimation() {
         this.pauseAnimation();
         this.zoomLevel = 0;
+        
+        // ONLY reset rotation counters on explicit reset
+        this.rotationCounter = 0;
+        this.imageRotationCounter = 0;
 
         // Reset audio
         if (this.audioElement) {
@@ -3176,6 +3446,9 @@ class ZoomQuiltGenerator {
     async prepareImagesForExport(width, height) {
         const exportImages = [];
 
+        // Use current rotation counter state for export - don't modify it
+        const startingRotationCounter = this.rotationCounter - this.images.length; // Go back to the start of this batch
+
         for (let i = 0; i < this.images.length; i++) {
             const imageData = this.images[i];
             
@@ -3203,8 +3476,11 @@ class ZoomQuiltGenerator {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
+            // Calculate rotation index for this image using the starting counter
+            const currentRotationIndex = startingRotationCounter + i;
+
             // Apply image rotation if enabled
-            const imageRotation = this.calculateImageRotationForImage(i);
+            const imageRotation = this.calculateImageRotationForImage(currentRotationIndex);
             
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -3217,16 +3493,17 @@ class ZoomQuiltGenerator {
             
             ctx.restore();
 
-            // Apply fade effect to edges with calculated rotation
-            const shapeRotation = this.calculateRotationForImage(i);
-            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, shapeRotation);
+            // Apply fade effect with SHAPE rotation always at 0 DEGREES during bake-in for export images.
+            const intendedShapeRotationForImage = this.calculateRotationForImage(startingRotationCounter + i);
+            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, 0);
 
             exportImages.push({
                 canvas: canvas,
                 ctx: ctx,
                 originalData: imageData,
-                shapeRotation: shapeRotation,
-                imageRotation: imageRotation
+                shapeRotation: intendedShapeRotationForImage, // Store intended
+                imageRotation: imageRotation, // Baked-in content rotation
+                rotationIndex: startingRotationCounter + i 
             });
         }
 
@@ -3346,84 +3623,109 @@ class ZoomQuiltGenerator {
     renderBlendedLayersToCanvasWithFading(ctx, visibleLayers, width, height) {
         if (visibleLayers.length === 0) return;
         
-        // Sort layers by scale (largest to smallest for proper depth)
         visibleLayers.sort((a, b) => b.layerScale - a.layerScale);
         
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
         if (this.blendMode === 'normal') {
-            // For normal blend mode, use simple layering with alpha
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
             visibleLayers.forEach(layer => {
                 ctx.globalAlpha = layer.alpha;
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.drawImage(layer.imageCanvas, 
-                    0, 0, layer.imageCanvas.width, layer.imageCanvas.height,
-                    layer.x, layer.y, layer.scaledWidth, layer.scaledHeight);
+
+                ctx.save();
+                ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
+                const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
+                ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+                ctx.drawImage(
+                    layer.imageCanvas,
+                    -layer.scaledWidth / 2,
+                    -layer.scaledHeight / 2,
+                    layer.scaledWidth,
+                    layer.scaledHeight
+                );
+                ctx.restore();
             });
-            
-            // Reset alpha
             ctx.globalAlpha = 1.0;
             return;
         }
         
-        // For other blend modes, create composite blending with fading
         if (visibleLayers.length === 1) {
+            const layer = visibleLayers[0];
             ctx.globalCompositeOperation = 'source-over';
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.globalAlpha = visibleLayers[0].alpha;
-            ctx.drawImage(visibleLayers[0].imageCanvas, 
-                0, 0, visibleLayers[0].imageCanvas.width, visibleLayers[0].imageCanvas.height,
-                visibleLayers[0].x, visibleLayers[0].y, 
-                visibleLayers[0].scaledWidth, visibleLayers[0].scaledHeight);
+            ctx.globalAlpha = layer.alpha;
+
+            ctx.save();
+            ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
+            const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
+            ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+            ctx.drawImage(
+                layer.imageCanvas,
+                -layer.scaledWidth / 2,
+                -layer.scaledHeight / 2,
+                layer.scaledWidth,
+                layer.scaledHeight
+            );
+            ctx.restore();
+
             ctx.globalAlpha = 1.0;
             return;
         }
         
-        // Multiple layers - blend them progressively with fading for export
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = width;
         tempCanvas.height = height;
         
-        // Start with the largest layer
-        tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.imageSmoothingEnabled = true;
         tempCtx.imageSmoothingQuality = 'high';
-        
+
         const firstLayer = visibleLayers[0];
+        tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.globalAlpha = firstLayer.alpha;
-        tempCtx.drawImage(firstLayer.imageCanvas, 
-            0, 0, firstLayer.imageCanvas.width, firstLayer.imageCanvas.height,
-            firstLayer.x, firstLayer.y, 
-            firstLayer.scaledWidth, firstLayer.scaledHeight);
+        tempCtx.save();
+        tempCtx.translate(firstLayer.x + firstLayer.scaledWidth / 2, firstLayer.y + firstLayer.scaledHeight / 2);
+        const firstLayerShapeRotation = this.calculateRotationForImage(firstLayer.layerRotationIndex);
+        tempCtx.rotate((firstLayerShapeRotation * Math.PI) / 180);
+        tempCtx.drawImage(
+            firstLayer.imageCanvas,
+            -firstLayer.scaledWidth / 2,
+            -firstLayer.scaledHeight / 2,
+            firstLayer.scaledWidth,
+            firstLayer.scaledHeight
+        );
+        tempCtx.restore();
         
-        // Progressively blend each subsequent layer with fading
         for (let i = 1; i < visibleLayers.length; i++) {
             const currentLayer = visibleLayers[i];
-            
             const layerCanvas = document.createElement('canvas');
             const layerCtx = layerCanvas.getContext('2d');
             layerCanvas.width = width;
             layerCanvas.height = height;
             
-            layerCtx.globalCompositeOperation = 'source-over';
             layerCtx.imageSmoothingEnabled = true;
             layerCtx.imageSmoothingQuality = 'high';
+            layerCtx.globalCompositeOperation = 'source-over';
             layerCtx.globalAlpha = currentLayer.alpha;
-            layerCtx.drawImage(currentLayer.imageCanvas, 
-                0, 0, currentLayer.imageCanvas.width, currentLayer.imageCanvas.height,
-                currentLayer.x, currentLayer.y, 
-                currentLayer.scaledWidth, currentLayer.scaledHeight);
+
+            layerCtx.save();
+            layerCtx.translate(currentLayer.x + currentLayer.scaledWidth / 2, currentLayer.y + currentLayer.scaledHeight / 2);
+            const currentLayerShapeRotation = this.calculateRotationForImage(currentLayer.layerRotationIndex);
+            layerCtx.rotate((currentLayerShapeRotation * Math.PI) / 180);
+            layerCtx.drawImage(
+                currentLayer.imageCanvas,
+                -currentLayer.scaledWidth / 2,
+                -currentLayer.scaledHeight / 2,
+                currentLayer.scaledWidth,
+                currentLayer.scaledHeight
+            );
+            layerCtx.restore();
             
-            // Apply the blend mode
             tempCtx.globalAlpha = 1.0;
             tempCtx.globalCompositeOperation = this.blendMode;
             tempCtx.drawImage(layerCanvas, 0, 0);
         }
         
-        // Draw the final result
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
         ctx.drawImage(tempCanvas, 0, 0);
@@ -3436,6 +3738,7 @@ class ZoomQuiltGenerator {
         if (exportImages.length === 0) return;
         
         // Same logic as main drawZoomQuiltFrame but adapted for export
+        const numExportImages = exportImages.length;
         const cycleLength = Math.log(1 / this.scaleRatio);
         const currentCycle = this.zoomLevel / cycleLength;
         const baseImageIndex = Math.floor(currentCycle) % exportImages.length;
@@ -3511,8 +3814,15 @@ class ZoomQuiltGenerator {
                 continue;
             }
             
+            // FIXED: Use dynamic rotation index for export too
+            //const baseRotationIndex = exportImages[imageIndex].rotationIndex;
+            //const dynamicRotationIndex = baseRotationIndex + Math.floor(currentCycle) + layer;
+            
+            // Calculate the conceptual index of this layer in the infinite quilt sequence
+            const conceptualQuiltLayerIndex = Math.floor(currentCycle) * numExportImages + baseImageIndex + layer;
+            
             visibleLayers.push({
-                imageCanvas,
+                imageCanvas: imageToRender.canvas,
                 x,
                 y,
                 scaledWidth,
@@ -3520,7 +3830,8 @@ class ZoomQuiltGenerator {
                 layerScale,
                 layer,
                 imageIndex,
-                alpha
+                alpha,
+                layerRotationIndex: conceptualQuiltLayerIndex
             });
         }
         
