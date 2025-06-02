@@ -213,6 +213,39 @@
                             </div>
                         </section>
 
+                        <!-- Vignette Effect -->
+                        <section class="vignette-settings">
+                            <h2>🌑 Vignette Effect</h2>
+                            <div class="controls-grid">
+                                <div class="control-group">
+                                    <label>
+                                        <input type="checkbox" id="vignetteEnabled"> 
+                                        Enable Vignette
+                                    </label>
+                                </div>
+
+                                <div class="vignette-controls">
+                                    <div class="control-group">
+                                        <label for="vignetteIntensity">Vignette Intensity</label>
+                                        <input type="range" id="vignetteIntensity" min="0" max="100" value="50" step="5" disabled>
+                                        <span class="value-display" id="vignetteIntensityValue">50%</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="vignetteSize">Vignette Size</label>
+                                        <input type="range" id="vignetteSize" min="30" max="150" value="80" step="5" disabled>
+                                        <span class="value-display" id="vignetteSizeValue">80%</span>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label for="vignetteFeather">Edge Softness</label>
+                                        <input type="range" id="vignetteFeather" min="0" max="100" value="60" step="5" disabled>
+                                        <span class="value-display" id="vignetteFeatherValue">60%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         <!-- Shape Rotation Controls -->
                         <!--section class="rotation-group shape-rotation-group">
                             <div class="rotation-header">

@@ -15,6 +15,12 @@ class ZoomQuiltGenerator {
         this.ctx = null;
         this.loadedImages = [];
 
+        // Add vignette properties
+        this.vignetteEnabled = false;
+        this.vignetteIntensity = 50;
+        this.vignetteSize = 80;
+        this.vignetteFeather = 60;
+
         // Initialize HTML5 Exporter
         this.html5Exporter = null;
         
@@ -846,6 +852,42 @@ class ZoomQuiltGenerator {
             });
         }
 
+        // Add vignette controls
+        const vignetteEnabledEl = document.getElementById('vignetteEnabled');
+        if (vignetteEnabledEl) {
+            vignetteEnabledEl.addEventListener('change', (e) => {
+                this.vignetteEnabled = e.target.checked;
+                this.updateVignetteControls();
+            });
+        }
+
+        const vignetteIntensityEl = document.getElementById('vignetteIntensity');
+        if (vignetteIntensityEl) {
+            vignetteIntensityEl.addEventListener('input', (e) => {
+                this.vignetteIntensity = parseInt(e.target.value);
+                const valueEl = document.getElementById('vignetteIntensityValue');
+                if (valueEl) valueEl.textContent = `${this.vignetteIntensity}%`;
+            });
+        }
+
+        const vignetteSizeEl = document.getElementById('vignetteSize');
+        if (vignetteSizeEl) {
+            vignetteSizeEl.addEventListener('input', (e) => {
+                this.vignetteSize = parseInt(e.target.value);
+                const valueEl = document.getElementById('vignetteSizeValue');
+                if (valueEl) valueEl.textContent = `${this.vignetteSize}%`;
+            });
+        }
+
+        const vignetteFeatherEl = document.getElementById('vignetteFeather');
+        if (vignetteFeatherEl) {
+            vignetteFeatherEl.addEventListener('input', (e) => {
+                this.vignetteFeather = parseInt(e.target.value);
+                const valueEl = document.getElementById('vignetteFeatherValue');
+                if (valueEl) valueEl.textContent = `${this.vignetteFeather}%`;
+            });
+        }
+
         // Action buttons - add null checks
         const generateBtnEl = document.getElementById('generateBtn');
         if (generateBtnEl) {
@@ -1009,11 +1051,11 @@ class ZoomQuiltGenerator {
         // Filter for image files only
         const imageFiles = Array.from(files).filter(file => {
             return file.type.startsWith('image/') || 
-                /\.(jpg|jpeg|png|bmp|webp|svg)$/i.test(file.name);
+                /\.(jpg|jpeg|png|bmp|gif|webp|svg)$/i.test(file.name);
         });
 
         if (imageFiles.length === 0) {
-            alert('No valid image files found. Please select image files (JPG, PNG, GIF, BMP, WebP, SVG).');
+            this.showNotification('No valid image files found. Please select image files (JPG, PNG, GIF, BMP, WebP, SVG).', 'warning');
             return;
         }
 
@@ -1411,23 +1453,51 @@ class ZoomQuiltGenerator {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const imageData = {
-                        id: Date.now() + Math.random(),
-                        file: file,
-                        name: file.name,
-                        size: file.size,
-                        url: e.target.result,
-                        image: img,
-                        width: img.width,
-                        height: img.height
+                const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+                
+                if (isGif) {
+                    // For GIFs, create an img element that will animate
+                    const gifImg = document.createElement('img');
+                    gifImg.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            file: file,
+                            name: file.name,
+                            size: file.size,
+                            url: e.target.result,
+                            image: gifImg,
+                            width: gifImg.naturalWidth || gifImg.width,
+                            height: gifImg.naturalHeight || gifImg.height,
+                            isGif: true,
+                            isAnimated: true
+                        };
+                        this.images.push(imageData);
+                        resolve(imageData);
                     };
-                    this.images.push(imageData);
-                    resolve(imageData);
-                };
-                img.onerror = reject;
-                img.src = e.target.result;
+                    gifImg.onerror = reject;
+                    gifImg.src = e.target.result;
+                } else {
+                    // For static images, use the existing method
+                    const img = new Image();
+                    img.onload = () => {
+                        const imageData = {
+                            id: Date.now() + Math.random(),
+                            file: file,
+                            name: file.name,
+                            size: file.size,
+                            url: e.target.result,
+                            image: img,
+                            width: img.width,
+                            height: img.height,
+                            isGif: false,
+                            isAnimated: false
+                        };
+                        this.images.push(imageData);
+                        resolve(imageData);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                }
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
@@ -1446,21 +1516,27 @@ class ZoomQuiltGenerator {
             return;
         }
 
-        imageList.innerHTML = this.images.map((img, index) => `
-            <div class="image-item" data-id="${img.id}" draggable="true">
-                <div class="image-index">${index + 1}</div>
-                <img src="${img.url}" alt="${img.name}">
-                <div class="image-info">
-                    <h4>${img.name}</h4>
-                    <p>${img.width} × ${img.height} | ${this.formatFileSize(img.size)}</p>
+        imageList.innerHTML = this.images.map((img, index) => {
+            // Add special styling and indicator for GIF files
+            const gifIndicator = img.isGif ? '<span class="gif-indicator" title="Animated GIF">🎬 GIF</span>' : '';
+            const imageClass = img.isGif ? 'image-item gif-image' : 'image-item';
+            
+            return `
+                <div class="${imageClass}" data-id="${img.id}" draggable="true">
+                    <div class="image-index">${index + 1}</div>
+                    <img src="${img.url}" alt="${img.name}" ${img.isGif ? 'class="gif-animation"' : ''}>
+                    <div class="image-info">
+                        <h4>${img.name} ${gifIndicator}</h4>
+                        <p>${img.width} × ${img.height} | ${this.formatFileSize(img.size)}</p>
+                    </div>
+                    <div class="image-controls">
+                        <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageLeft('${img.id}')" ${index === 0 ? 'disabled' : ''} title="Move Left">◀</button>
+                        <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageRight('${img.id}')" ${index === this.images.length - 1 ? 'disabled' : ''} title="Move Right">▶</button>
+                        <button class="control-btn remove-btn" onclick="zoomQuilt.removeImage('${img.id}')" title="Remove">×</button>
+                    </div>
                 </div>
-                <div class="image-controls">
-                    <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageLeft('${img.id}')" ${index === 0 ? 'disabled' : ''} title="Move Left">◀</button>
-                    <button class="control-btn arrow-btn" onclick="zoomQuilt.moveImageRight('${img.id}')" ${index === this.images.length - 1 ? 'disabled' : ''} title="Move Right">▶</button>
-                    <button class="control-btn remove-btn" onclick="zoomQuilt.removeImage('${img.id}')" title="Remove">×</button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         this.setupImageSorting();
     }
@@ -1665,6 +1741,10 @@ class ZoomQuiltGenerator {
         updateElement('imageProgressiveRotationStepValue', `${this.imageProgressiveRotationStep}°`);
         updateElement('imageRandomRotationMinValue', `${this.imageRandomRotationMin}°`);
         updateElement('imageRandomRotationMaxValue', `${this.imageRandomRotationMax}°`);
+
+        updateElement('vignetteIntensityValue', `${this.vignetteIntensity}%`);
+        updateElement('vignetteSizeValue', `${this.vignetteSize}%`);
+        updateElement('vignetteFeatherValue', `${this.vignetteFeather}%`);
     }
 
     showCanvasLoadingScreen() {
@@ -1858,17 +1938,13 @@ class ZoomQuiltGenerator {
         const loadedImages = [];
         const totalImages = this.images.length;
 
-        // IMPORTANT: Don't reset rotation counters here - let them continue accumulating
-        
         for (let i = 0; i < this.images.length; i++) {
             const imageData = this.images[i];
             
-            // Update loading screen with progress
+            // Update loading screen with progress and filename
             if (this.loadingAnimationId) {
-                // Temporarily clear the loading animation to show progress
                 this.stopCanvasLoadingAnimation();
                 
-                // Show progress on canvas
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 this.ctx.fillStyle = '#000000';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1877,52 +1953,51 @@ class ZoomQuiltGenerator {
                 const centerY = this.canvas.height / 2;
                 const progress = (i + 1) / totalImages;
                 
-                // Progress background
                 this.ctx.save();
                 this.ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Progress bar
                 const barWidth = Math.min(300, this.canvas.width * 0.6);
                 const barHeight = 8;
                 const barX = centerX - barWidth / 2;
                 const barY = centerY + 20;
                 
-                // Progress bar background
                 this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                 this.ctx.fillRect(barX, barY, barWidth, barHeight);
                 
-                // Progress bar fill
                 this.ctx.fillStyle = '#667eea';
                 this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
                 
-                // Progress text
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillStyle = '#ffffff';
                 this.ctx.font = 'bold 20px Arial, sans-serif';
-                this.ctx.fillText('Processing Images...', centerX, centerY - 20);
+                this.ctx.fillText('Processing Images...', centerX, centerY - 30);
                 
                 this.ctx.font = '14px Arial, sans-serif';
                 this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 this.ctx.fillText(`${i + 1} of ${totalImages} images processed`, centerX, centerY + 50);
                 this.ctx.fillText(`${Math.round(progress * 100)}%`, centerX, centerY + 70);
                 
+                this.ctx.font = '12px Arial, sans-serif';
+                this.ctx.fillStyle = imageData.isGif ? '#ff6b6b' : 'rgba(255, 255, 255, 0.6)';
+                const displayName = imageData.name.length > 40 ? 
+                    imageData.name.substring(0, 37) + '...' : imageData.name;
+                const gifLabel = imageData.isGif ? ' 🎬 (Animated GIF)' : '';
+                this.ctx.fillText(`📄 ${displayName}${gifLabel}`, centerX, centerY + 90);
+                
                 this.ctx.restore();
                 
-                // Small delay to make progress visible
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
             
-            // Create canvas for each image with fade effect
+            // Create canvas for each image
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Set canvas size to match the main canvas
             canvas.width = this.canvas.width;
             canvas.height = this.canvas.height;
 
-            // Calculate image scaling to cover the entire canvas
             const scaleX = canvas.width / imageData.width;
             const scaleY = canvas.height / imageData.height;
             const scale = Math.max(scaleX, scaleY);
@@ -1930,41 +2005,40 @@ class ZoomQuiltGenerator {
             const scaledWidth = imageData.width * scale;
             const scaledHeight = imageData.height * scale;
 
-            // Fill canvas with black first
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Enable high-quality image smoothing
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
+            // For GIFs, don't disable smoothing to maintain animation quality
+            ctx.imageSmoothingEnabled = !imageData.isGif;
+            if (!imageData.isGif) {
+                ctx.imageSmoothingQuality = 'high';
+            }
 
-            // Use current rotation counters for base rotations during preparation
             const baseImageRotation = this.calculateImageRotationForImage(i);
             
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate((baseImageRotation * Math.PI) / 180);
-
-            // Draw the image centered and rotated
-            const x = -scaledWidth / 2;
-            const y = -scaledHeight / 2;
-            ctx.drawImage(imageData.image, x, y, scaledWidth, scaledHeight);
-            
-            ctx.restore();
-
-            // Apply fade effect with SHAPE rotation always at 0 DEGREES during bake-in.
-            // The actual rotation will be applied dynamically per layer during rendering.
-            this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, 0);
+            // For animated GIFs, we'll draw them dynamically in the render loop
+            // For now, just create the canvas structure
+            if (!imageData.isGif) {
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((baseImageRotation * Math.PI) / 180);
+                ctx.drawImage(imageData.image, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+                ctx.restore();
+                
+                this.applyFadeEffectWithRotation(ctx, canvas.width, canvas.height, 0);
+            }
 
             loadedImages.push({
                 canvas: canvas,
                 ctx: ctx,
                 originalData: imageData,
-                // Store the intended base rotations for informational purposes or if needed elsewhere,
-                // but they are not visually baked into the shape's orientation on the canvas anymore.
-                baseShapeRotation: this.calculateRotationForImage(i), // Intended base shape rotation for this image index
-                baseImageRotation: baseImageRotation, // Image content rotation is still baked
-                imageIndex: i 
+                baseShapeRotation: this.calculateRotationForImage(i),
+                baseImageRotation: baseImageRotation,
+                imageIndex: i,
+                isGif: imageData.isGif,
+                scaledWidth: scaledWidth,
+                scaledHeight: scaledHeight,
+                scale: scale
             });
         }
 
@@ -2282,6 +2356,16 @@ class ZoomQuiltGenerator {
         ctx.drawImage(tempCanvas, 0, 0);
         ctx.globalAlpha = 1;
         ctx.filter = 'none';
+    }
+
+    updateVignetteControls() {
+        const vignetteGroup = document.querySelector('.vignette-controls');
+        if (vignetteGroup) {
+            const inputs = vignetteGroup.querySelectorAll('input:not([type="checkbox"])');
+            inputs.forEach(input => {
+                input.disabled = !this.vignetteEnabled;
+            });
+        }
     }
 
     applyShapeFade(ctx, width, height) {
@@ -2636,39 +2720,28 @@ class ZoomQuiltGenerator {
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
         
-        // Clear the canvas first
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         if (this.loadedImages.length === 0) return;
 
-        // Calculate which image should be the "base" (outermost) image
         const numLoadedImages = this.loadedImages.length;
         const cycleLength = Math.log(1 / this.scaleRatio);
         const currentCycle = this.zoomLevel / cycleLength;
         const baseImageIndex = Math.floor(currentCycle) % this.loadedImages.length;
         const cycleProgress = currentCycle - Math.floor(currentCycle);
-        
-        // The main zoom factor for the current base image
         const baseZoom = Math.exp(cycleProgress * cycleLength);
-        
-        // Extended layer range - draw from larger background images to smaller foreground ones
         const totalLayers = this.loadedImages.length + 12;
         
-        // Create array to store all visible layers with their properties
         const visibleLayers = [];
         
-        // First pass: collect all visible layers
         for (let layer = -6; layer < totalLayers; layer++) {
-            // Calculate which image to use for this layer
             const imageIndex = ((baseImageIndex + layer) % this.loadedImages.length + this.loadedImages.length) % this.loadedImages.length;
             const imageToRender = this.loadedImages[imageIndex];
             
-            // Calculate the scale for this layer
             let layerScale = baseZoom * Math.pow(this.scaleRatio, layer);
             
-            // Apply smoothed parallax offset to prevent jumping
             if (this.zoomOffset !== 0) {
                 const smoothPhase = this.zoomLevel * this.zoomOffset * 0.1;
                 const layerPhase = layer * 0.3;
@@ -2686,54 +2759,37 @@ class ZoomQuiltGenerator {
                 layerScale *= (1 + smoothedParallaxFactor);
             }
             
-            // Check scale limits
-            if (layerScale < 0.0001 || layerScale > 100) {
-                continue;
-            }
+            if (layerScale < 0.0001 || layerScale > 100) continue;
             
-            // Calculate dimensions and position (centered)
             const scaledWidth = this.canvas.width * layerScale;
             const scaledHeight = this.canvas.height * layerScale;
             const x = centerX - scaledWidth / 2;
             const y = centerY - scaledHeight / 2;
             
-            // Calculate alpha based on scale for smooth fade-out
             let alpha = 1.0;
             
-            // Fade out when images get too large (approaching the foreground)
-            const fadeStartScale = 15; // Start fading at 15x canvas size
-            const fadeEndScale = 50;   // Completely faded at 50x canvas size
+            const fadeStartScale = 15;
+            const fadeEndScale = 50;
             
             if (layerScale > fadeStartScale) {
-                // Calculate fade progress (0 = fully visible, 1 = fully transparent)
                 const fadeProgress = Math.min(1, (layerScale - fadeStartScale) / (fadeEndScale - fadeStartScale));
-                
-                // Apply smooth easing to the fade
-                const easedFade = 1 - Math.pow(1 - fadeProgress, 2); // Quadratic ease-out
+                const easedFade = 1 - Math.pow(1 - fadeProgress, 2);
                 alpha = 1 - easedFade;
                 
-                // If completely transparent, skip this layer
-                if (alpha <= 0.01) {
-                    continue;
-                }
+                if (alpha <= 0.01) continue;
             }
             
-            // Also fade out when images get too small (disappearing into background)
             const smallFadeStartScale = 0.001;
             const smallFadeEndScale = 0.01;
             
             if (layerScale < smallFadeEndScale) {
                 const smallFadeProgress = Math.max(0, (layerScale - smallFadeStartScale) / (smallFadeEndScale - smallFadeStartScale));
-                const easedSmallFade = Math.pow(smallFadeProgress, 0.5); // Square root ease-in
+                const easedSmallFade = Math.pow(smallFadeProgress, 0.5);
                 alpha = Math.min(alpha, easedSmallFade);
                 
-                // If completely transparent, skip this layer
-                if (alpha <= 0.01) {
-                    continue;
-                }
+                if (alpha <= 0.01) continue;
             }
             
-            // Generous culling with large buffer
             const buffer = Math.max(scaledWidth, scaledHeight) * 0.5;
             if (x + scaledWidth + buffer < -this.canvas.width || 
                 y + scaledHeight + buffer < -this.canvas.height || 
@@ -2742,26 +2798,89 @@ class ZoomQuiltGenerator {
                 continue;
             }
             
-            // Calculate the conceptual index of this layer in the infinite quilt sequence
-            // This index determines its fixed rotation if progressive or random mode is used.
             const conceptualQuiltLayerIndex = Math.floor(currentCycle) * numLoadedImages + baseImageIndex + layer;
             
             visibleLayers.push({
-                imageCanvas: imageToRender.canvas,
+                imageToRender: imageToRender,
                 x,
                 y,
                 scaledWidth,
                 scaledHeight,
                 layerScale,
-                layer, // Relative layer depth for parallax or other effects
-                imageIndex, // Index of the source image in this.loadedImages
+                layer,
+                imageIndex,
                 alpha,
-                layerRotationIndex: conceptualQuiltLayerIndex // Used for calculateRotationForImage
+                layerRotationIndex: conceptualQuiltLayerIndex
             });
         }
         
-        // Second pass: render layers with proper blending and fading
         this.renderBlendedLayersWithFading(visibleLayers);
+        
+        // Apply vignette effect if enabled
+        if (this.vignetteEnabled) {
+            this.drawVignette();
+        }
+    }
+
+    drawVignette() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const maxRadius = Math.max(this.canvas.width, this.canvas.height) * 0.7;
+        
+        // Calculate vignette dimensions based on settings
+        const vignetteRadius = (maxRadius * this.vignetteSize) / 100;
+        const featherAmount = (vignetteRadius * this.vignetteFeather) / 100;
+        const intensity = this.vignetteIntensity / 100;
+        
+        // Create radial gradient for vignette
+        const gradient = this.ctx.createRadialGradient(
+            centerX, centerY, vignetteRadius - featherAmount,
+            centerX, centerY, vignetteRadius + featherAmount
+        );
+        
+        gradient.addColorStop(0, `rgba(0, 0, 0, 0)`);
+        gradient.addColorStop(1, `rgba(0, 0, 0, ${intensity})`);
+        
+        // Apply vignette
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'multiply';
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.restore();
+    }
+
+    drawAnimatedGifLayer(imageToRender, x, y, width, height) {
+        // Create a temporary canvas for the GIF frame with effects
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = Math.abs(width);
+        tempCanvas.height = Math.abs(height);
+        
+        // Fill with black
+        tempCtx.fillStyle = '#000000';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Draw the current frame of the animated GIF
+        tempCtx.save();
+        tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+        tempCtx.rotate((imageToRender.baseImageRotation * Math.PI) / 180);
+        
+        // Draw the GIF at its current animated frame
+        tempCtx.drawImage(
+            imageToRender.originalData.image,
+            -imageToRender.scaledWidth / 2,
+            -imageToRender.scaledHeight / 2,
+            imageToRender.scaledWidth,
+            imageToRender.scaledHeight
+        );
+        
+        tempCtx.restore();
+        
+        // Apply fade effects to the temporary canvas
+        this.applyFadeEffectWithRotation(tempCtx, tempCanvas.width, tempCanvas.height, 0);
+        
+        // Draw the processed frame to the main canvas
+        this.ctx.drawImage(tempCanvas, x, y, width, height);
     }
 
     renderBlendedLayersWithFading(visibleLayers) {
@@ -2781,13 +2900,20 @@ class ZoomQuiltGenerator {
                 this.ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
                 const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
                 this.ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
-                this.ctx.drawImage(
-                    layer.imageCanvas,
-                    -layer.scaledWidth / 2,
-                    -layer.scaledHeight / 2,
-                    layer.scaledWidth,
-                    layer.scaledHeight
-                );
+                
+                // Handle animated GIFs by drawing them fresh each frame
+                if (layer.imageToRender.isGif) {
+                    this.drawAnimatedGifLayer(layer.imageToRender, -layer.scaledWidth / 2, -layer.scaledHeight / 2, layer.scaledWidth, layer.scaledHeight);
+                } else {
+                    this.ctx.drawImage(
+                        layer.imageToRender.canvas,
+                        -layer.scaledWidth / 2,
+                        -layer.scaledHeight / 2,
+                        layer.scaledWidth,
+                        layer.scaledHeight
+                    );
+                }
+                
                 this.ctx.restore();
             });
             this.ctx.globalAlpha = 1.0;
@@ -2803,13 +2929,19 @@ class ZoomQuiltGenerator {
             this.ctx.translate(layer.x + layer.scaledWidth / 2, layer.y + layer.scaledHeight / 2);
             const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
             this.ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
-            this.ctx.drawImage(
-                layer.imageCanvas,
-                -layer.scaledWidth / 2,
-                -layer.scaledHeight / 2,
-                layer.scaledWidth,
-                layer.scaledHeight
-            );
+            
+            if (layer.imageToRender.isGif) {
+                this.drawAnimatedGifLayer(layer.imageToRender, -layer.scaledWidth / 2, -layer.scaledHeight / 2, layer.scaledWidth, layer.scaledHeight);
+            } else {
+                this.ctx.drawImage(
+                    layer.imageToRender.canvas,
+                    -layer.scaledWidth / 2,
+                    -layer.scaledHeight / 2,
+                    layer.scaledWidth,
+                    layer.scaledHeight
+                );
+            }
+            
             this.ctx.restore();
             
             this.ctx.globalAlpha = 1.0;
@@ -4265,9 +4397,112 @@ class ZoomQuiltGenerator {
                 <div class="loading-progress-bar">
                     <div class="loading-progress-fill" id="loadingProgressFill"></div>
                 </div>
-                <p class="loading-text" id="loadingText">Preparing to load ${totalFiles} image(s)...</p>
+                <div class="loading-text" id="loadingText">
+                    <div>Preparing to load ${totalFiles} image(s)...</div>
+                </div>
             </div>
         `;
+
+        // Add enhanced styles for the loading indicator
+        const style = document.createElement('style');
+        style.textContent = `
+            .loading-indicator {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease-out;
+            }
+            
+            .loading-content {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 40px;
+                border-radius: 20px;
+                text-align: center;
+                color: white;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                max-width: 400px;
+                width: 90%;
+            }
+            
+            .loading-spinner {
+                width: 50px;
+                height: 50px;
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-top: 4px solid white;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+            
+            .loading-progress-bar {
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 4px;
+                overflow: hidden;
+                margin: 20px 0;
+            }
+            
+            .loading-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #10b981, #34d399);
+                border-radius: 4px;
+                width: 0%;
+                transition: width 0.3s ease;
+            }
+            
+            .loading-text {
+                font-size: 16px;
+                line-height: 1.4;
+            }
+            
+            .gif-indicator {
+                background: linear-gradient(45deg, #ff6b6b, #feca57);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 0.7em;
+                font-weight: bold;
+                margin-left: 5px;
+                animation: pulse 2s infinite;
+            }
+            
+            .gif-image {
+                border: 2px solid #ff6b6b !important;
+                box-shadow: 0 0 10px rgba(255, 107, 107, 0.3) !important;
+            }
+            
+            .gif-animation {
+                image-rendering: auto !important;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        `;
+        
+        if (!document.head.querySelector('style[data-loading-styles]')) {
+            style.setAttribute('data-loading-styles', 'true');
+            document.head.appendChild(style);
+        }
 
         document.body.appendChild(indicator);
     }
@@ -4279,7 +4514,18 @@ class ZoomQuiltGenerator {
         if (progressFill && loadingText) {
             const percentage = (loaded / total) * 100;
             progressFill.style.width = `${percentage}%`;
-            loadingText.textContent = `Loading images... ${loaded}/${total} (${Math.round(percentage)}%)`;
+            
+            // Get the current image being loaded (this will be called after each image loads)
+            const currentImage = this.images[loaded - 1]; // loaded is 1-based, array is 0-based
+            if (currentImage) {
+                const fileName = currentImage.name;
+                loadingText.innerHTML = `
+                    <div>Loading images... ${loaded}/${total} (${Math.round(percentage)}%)</div>
+                    <div style="font-size: 0.9em; opacity: 0.8; margin-top: 4px;">📄 ${fileName}</div>
+                `;
+            } else {
+                loadingText.textContent = `Loading images... ${loaded}/${total} (${Math.round(percentage)}%)`;
+            }
         }
     }
 
