@@ -87,12 +87,55 @@ class ZoomQuiltGenerator {
                 sensitivity: 2.0,
                 gradientStart: '#667eea',
                 gradientEnd: '#764ba2'
+            },
+            starfield: {
+                enabled: false,
+                starCount: 200,
+                maxSize: 4,
+                twinkleSpeed: 2.0,
+                sensitivity: 1.5,
+                colors: ['#ffffff', '#ccddff', '#ffcccc', '#ffffcc', '#ccffcc'],
+                depth: 100,
+                speed: 0.5
+            },
+            particles: {
+                enabled: false,
+                count: 150,
+                maxSize: 6,
+                sensitivity: 2.0,
+                colors: ['#667eea', '#764ba2', '#10b981', '#f59e0b'],
+                physics: 'explosive', // 'explosive', 'flowing', 'orbital'
+                lifespan: 3000
+            },
+            waveform: {
+                enabled: false,
+                type: 'line', // 'line', 'filled', 'mirror'
+                thickness: 3,
+                sensitivity: 2.0,
+                smoothing: 0.8,
+                color: '#667eea',
+                position: 'center' // 'top', 'center', 'bottom'
+            },
+            tunnel: {
+                enabled: false,
+                rings: 8,
+                segments: 32,
+                depth: 500,
+                sensitivity: 1.8,
+                rotation: 0.5,
+                color: '#667eea',
+                opacity: 0.7
             }
         };
 
         // Fullscreen toolbar auto-hide
         this.fullscreenToolbarTimeout = null;
         this.lastMouseActivity = Date.now();
+
+        // Initialize particle systems
+        this.starfieldStars = [];
+        this.particles = [];
+        this.lastParticleTime = 0;
 
         this.init();
     }
@@ -472,6 +515,221 @@ class ZoomQuiltGenerator {
             });
         }
 
+        // Starfield visualizer controls
+        const starfieldEnabledCheckbox = document.getElementById('starfieldVisualizerEnabled');
+        if (starfieldEnabledCheckbox) {
+            starfieldEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.starfield.enabled = e.target.checked;
+                this.updateVisualizerControls('starfield');
+                if (e.target.checked) {
+                    this.initializeStarfield();
+                }
+            });
+        }
+
+        const starfieldControls = [
+            'starfieldStarCount',
+            'starfieldMaxSize', 
+            'starfieldTwinkleSpeed',
+            'starfieldSensitivity',
+            'starfieldSpeed'
+        ];
+
+        starfieldControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    
+                    switch(controlId) {
+                        case 'starfieldStarCount':
+                            this.visualizers.starfield.starCount = Math.floor(value);
+                            document.getElementById('starfieldStarCountValue').textContent = Math.floor(value);
+                            this.initializeStarfield();
+                            break;
+                        case 'starfieldMaxSize':
+                            this.visualizers.starfield.maxSize = value;
+                            document.getElementById('starfieldMaxSizeValue').textContent = `${value}px`;
+                            break;
+                        case 'starfieldTwinkleSpeed':
+                            this.visualizers.starfield.twinkleSpeed = value;
+                            document.getElementById('starfieldTwinkleSpeedValue').textContent = `${value}x`;
+                            break;
+                        case 'starfieldSensitivity':
+                            this.visualizers.starfield.sensitivity = value;
+                            document.getElementById('starfieldSensitivityValue').textContent = `${value}x`;
+                            break;
+                        case 'starfieldSpeed':
+                            this.visualizers.starfield.speed = value;
+                            document.getElementById('starfieldSpeedValue').textContent = `${value}x`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        // Particle visualizer controls
+        const particleEnabledCheckbox = document.getElementById('particleVisualizerEnabled');
+        if (particleEnabledCheckbox) {
+            particleEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.particles.enabled = e.target.checked;
+                this.updateVisualizerControls('particles');
+            });
+        }
+
+        const particleControls = [
+            'particleCount',
+            'particleMaxSize',
+            'particleSensitivity'
+        ];
+
+        particleControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    
+                    switch(controlId) {
+                        case 'particleCount':
+                            this.visualizers.particles.count = Math.floor(value);
+                            document.getElementById('particleCountValue').textContent = Math.floor(value);
+                            break;
+                        case 'particleMaxSize':
+                            this.visualizers.particles.maxSize = value;
+                            document.getElementById('particleMaxSizeValue').textContent = `${value}px`;
+                            break;
+                        case 'particleSensitivity':
+                            this.visualizers.particles.sensitivity = value;
+                            document.getElementById('particleSensitivityValue').textContent = `${value}x`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        const particlePhysicsSelect = document.getElementById('particlePhysics');
+        if (particlePhysicsSelect) {
+            particlePhysicsSelect.addEventListener('change', (e) => {
+                this.visualizers.particles.physics = e.target.value;
+            });
+        }
+
+        // Waveform visualizer controls
+        const waveformEnabledCheckbox = document.getElementById('waveformVisualizerEnabled');
+        if (waveformEnabledCheckbox) {
+            waveformEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.waveform.enabled = e.target.checked;
+                this.updateVisualizerControls('waveform');
+            });
+        }
+
+        const waveformControls = [
+            'waveformThickness',
+            'waveformSensitivity',
+            'waveformSmoothing'
+        ];
+
+        waveformControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    
+                    switch(controlId) {
+                        case 'waveformThickness':
+                            this.visualizers.waveform.thickness = value;
+                            document.getElementById('waveformThicknessValue').textContent = `${value}px`;
+                            break;
+                        case 'waveformSensitivity':
+                            this.visualizers.waveform.sensitivity = value;
+                            document.getElementById('waveformSensitivityValue').textContent = `${value}x`;
+                            break;
+                        case 'waveformSmoothing':
+                            this.visualizers.waveform.smoothing = value;
+                            document.getElementById('waveformSmoothingValue').textContent = `${Math.round(value * 100)}%`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        const waveformTypeSelect = document.getElementById('waveformType');
+        if (waveformTypeSelect) {
+            waveformTypeSelect.addEventListener('change', (e) => {
+                this.visualizers.waveform.type = e.target.value;
+            });
+        }
+
+        const waveformPositionSelect = document.getElementById('waveformPosition');
+        if (waveformPositionSelect) {
+            waveformPositionSelect.addEventListener('change', (e) => {
+                this.visualizers.waveform.position = e.target.value;
+            });
+        }
+
+        const waveformColorInput = document.getElementById('waveformColor');
+        if (waveformColorInput) {
+            waveformColorInput.addEventListener('change', (e) => {
+                this.visualizers.waveform.color = e.target.value;
+            });
+        }
+
+        // Tunnel visualizer controls
+        const tunnelEnabledCheckbox = document.getElementById('tunnelVisualizerEnabled');
+        if (tunnelEnabledCheckbox) {
+            tunnelEnabledCheckbox.addEventListener('change', (e) => {
+                this.visualizers.tunnel.enabled = e.target.checked;
+                this.updateVisualizerControls('tunnel');
+            });
+        }
+
+        const tunnelControls = [
+            'tunnelRings',
+            'tunnelSegments',
+            'tunnelSensitivity',
+            'tunnelRotation',
+            'tunnelOpacity'
+        ];
+
+        tunnelControls.forEach(controlId => {
+            const element = document.getElementById(controlId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    
+                    switch(controlId) {
+                        case 'tunnelRings':
+                            this.visualizers.tunnel.rings = Math.floor(value);
+                            document.getElementById('tunnelRingsValue').textContent = Math.floor(value);
+                            break;
+                        case 'tunnelSegments':
+                            this.visualizers.tunnel.segments = Math.floor(value);
+                            document.getElementById('tunnelSegmentsValue').textContent = Math.floor(value);
+                            break;
+                        case 'tunnelSensitivity':
+                            this.visualizers.tunnel.sensitivity = value;
+                            document.getElementById('tunnelSensitivityValue').textContent = `${value}x`;
+                            break;
+                        case 'tunnelRotation':
+                            this.visualizers.tunnel.rotation = value;
+                            document.getElementById('tunnelRotationValue').textContent = `${value}x`;
+                            break;
+                        case 'tunnelOpacity':
+                            this.visualizers.tunnel.opacity = value;
+                            document.getElementById('tunnelOpacityValue').textContent = `${Math.round(value * 100)}%`;
+                            break;
+                    }
+                });
+            }
+        });
+
+        const tunnelColorInput = document.getElementById('tunnelColor');
+        if (tunnelColorInput) {
+            tunnelColorInput.addEventListener('change', (e) => {
+                this.visualizers.tunnel.color = e.target.value;
+            });
+        }
+
         // Initialize
         this.updateCircularModeVisibility();
         this.updateCircularColorPickers();
@@ -483,9 +741,12 @@ class ZoomQuiltGenerator {
             const inputs = controls.querySelectorAll('input:not([type="checkbox"]), select');
             
             inputs.forEach(input => {
-                // Don't disable the mode selector for circular visualizer
-                if (type === 'circular' && input.id === 'circularMode') {
-                    input.disabled = false;
+                // Don't disable mode selectors
+                if ((type === 'circular' && input.id === 'circularMode') ||
+                    (type === 'particles' && input.id === 'particlePhysics') ||
+                    (type === 'waveform' && (input.id === 'waveformType' || input.id === 'waveformPosition')) ||
+                    (type === 'tunnel')) {
+                    input.disabled = !this.visualizers[type].enabled;
                 } else {
                     input.disabled = !this.visualizers[type].enabled;
                 }
@@ -1051,11 +1312,11 @@ class ZoomQuiltGenerator {
         // Filter for image files only
         const imageFiles = Array.from(files).filter(file => {
             return file.type.startsWith('image/') || 
-                /\.(jpg|jpeg|png|bmp|gif|webp|svg)$/i.test(file.name);
+                /\.(jpg|jpeg|png|bmp|webp|svg)$/i.test(file.name);
         });
 
         if (imageFiles.length === 0) {
-            this.showNotification('No valid image files found. Please select image files (JPG, PNG, GIF, BMP, WebP, SVG).', 'warning');
+            this.showNotification('No valid image files found. Please select image files (JPG, PNG, BMP, WebP, SVG).', 'warning');
             return;
         }
 
@@ -2501,14 +2762,29 @@ class ZoomQuiltGenerator {
         // Get audio data
         this.analyser.getByteFrequencyData(this.dataArray);
 
-        // Draw circular visualizer
+        // Draw each visualizer type
         if (this.visualizers.circular.enabled) {
             this.drawCircularVisualizer();
         }
 
-        // Draw bar visualizer
         if (this.visualizers.bar.enabled) {
             this.drawBarVisualizer();
+        }
+
+        if (this.visualizers.starfield.enabled) {
+            this.drawStarfield();
+        }
+
+        if (this.visualizers.particles.enabled) {
+            this.drawParticles();
+        }
+
+        if (this.visualizers.waveform.enabled) {
+            this.drawWaveform();
+        }
+
+        if (this.visualizers.tunnel.enabled) {
+            this.drawTunnel();
         }
     }
 
@@ -2716,6 +2992,391 @@ class ZoomQuiltGenerator {
         this.ctx.restore();
     }
 
+    // Initialize starfield
+    initializeStarfield() {
+        this.starfieldStars = [];
+        const config = this.visualizers.starfield;
+        
+        for (let i = 0; i < config.starCount; i++) {
+            this.starfieldStars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                z: Math.random() * config.depth,
+                originalZ: Math.random() * config.depth,
+                size: Math.random() * config.maxSize + 0.5,
+                color: config.colors[Math.floor(Math.random() * config.colors.length)],
+                twinkle: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.5 + Math.random() * 2
+            });
+        }
+    }
+
+    drawStarfield() {
+        const config = this.visualizers.starfield;
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Get average audio intensity
+        let avgIntensity = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+            avgIntensity += this.dataArray[i];
+        }
+        avgIntensity = (avgIntensity / this.dataArray.length) / 255;
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+        
+        // Update and draw stars
+        for (let star of this.starfieldStars) {
+            // Move star based on audio intensity and speed
+            const speedMultiplier = 1 + (avgIntensity * config.sensitivity);
+            star.z -= config.speed * speedMultiplier;
+            
+            // Reset star if it's too close
+            if (star.z <= 0) {
+                star.z = config.depth;
+                star.x = Math.random() * this.canvas.width;
+                star.y = Math.random() * this.canvas.height;
+            }
+            
+            // Calculate screen position
+            const scale = (config.depth - star.z) / config.depth;
+            const x = centerX + (star.x - centerX) * scale;
+            const y = centerY + (star.y - centerY) * scale;
+            
+            // Calculate size and brightness based on distance and audio
+            const distance = config.depth - star.z;
+            const brightness = (distance / config.depth) * (0.5 + avgIntensity * 0.5);
+            const size = star.size * scale * (1 + avgIntensity * 0.5);
+            
+            // Update twinkle
+            star.twinkle += star.twinkleSpeed * config.twinkleSpeed * 0.1;
+            const twinkleBrightness = (Math.sin(star.twinkle) + 1) * 0.5;
+            
+            // Draw star
+            this.ctx.globalAlpha = brightness * twinkleBrightness;
+            this.ctx.fillStyle = star.color;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, size, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Add star glow for larger stars
+            if (size > 2) {
+                this.ctx.globalAlpha = brightness * twinkleBrightness * 0.3;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+        
+        this.ctx.restore();
+    }
+
+    drawParticles() {
+        const config = this.visualizers.particles;
+        const currentTime = Date.now();
+        
+        // Get audio intensity
+        let avgIntensity = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+            avgIntensity += this.dataArray[i];
+        }
+        avgIntensity = (avgIntensity / this.dataArray.length) / 255;
+        
+        // Create new particles based on audio intensity
+        if (currentTime - this.lastParticleTime > (100 - avgIntensity * 80)) {
+            if (this.particles.length < config.count) {
+                this.createParticle(config, avgIntensity);
+            }
+            this.lastParticleTime = currentTime;
+        }
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+        
+        // Update and draw particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
+            
+            // Update particle based on physics type
+            this.updateParticle(particle, config, avgIntensity);
+            
+            // Remove old particles
+            if (currentTime - particle.birthTime > config.lifespan) {
+                this.particles.splice(i, 1);
+                continue;
+            }
+            
+            // Calculate particle alpha based on age
+            const age = (currentTime - particle.birthTime) / config.lifespan;
+            const alpha = 1 - Math.pow(age, 2);
+            
+            // Draw particle
+            this.ctx.globalAlpha = alpha * (0.7 + avgIntensity * 0.3);
+            this.ctx.fillStyle = particle.color;
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Add particle trail for explosive physics
+            if (config.physics === 'explosive' && particle.trail && particle.trail.length > 1) {
+                this.ctx.globalAlpha = alpha * 0.3;
+                this.ctx.strokeStyle = particle.color;
+                this.ctx.lineWidth = particle.size * 0.5;
+                this.ctx.beginPath();
+                this.ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
+                for (let j = 1; j < particle.trail.length; j++) {
+                    this.ctx.lineTo(particle.trail[j].x, particle.trail[j].y);
+                }
+                this.ctx.stroke();
+            }
+        }
+        
+        this.ctx.restore();
+    }
+
+    createParticle(config, intensity) {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        let particle = {
+            birthTime: Date.now(),
+            color: config.colors[Math.floor(Math.random() * config.colors.length)],
+            size: Math.random() * config.maxSize * (0.5 + intensity * 0.5),
+            trail: []
+        };
+        
+        switch (config.physics) {
+            case 'explosive':
+                particle.x = centerX + (Math.random() - 0.5) * 100;
+                particle.y = centerY + (Math.random() - 0.5) * 100;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (2 + Math.random() * 4) * (1 + intensity * config.sensitivity);
+                particle.vx = Math.cos(angle) * speed;
+                particle.vy = Math.sin(angle) * speed;
+                particle.gravity = 0.1;
+                break;
+                
+            case 'flowing':
+                particle.x = Math.random() * this.canvas.width;
+                particle.y = this.canvas.height + 20;
+                particle.vx = (Math.random() - 0.5) * 2;
+                particle.vy = -1 - Math.random() * 2 - intensity * 2;
+                break;
+                
+            case 'orbital':
+                const radius = 50 + Math.random() * 150;
+                const startAngle = Math.random() * Math.PI * 2;
+                particle.centerX = centerX;
+                particle.centerY = centerY;
+                particle.radius = radius;
+                particle.angle = startAngle;
+                particle.angularSpeed = (0.02 + Math.random() * 0.05) * (1 + intensity);
+                particle.x = centerX + Math.cos(startAngle) * radius;
+                particle.y = centerY + Math.sin(startAngle) * radius;
+                break;
+        }
+        
+        this.particles.push(particle);
+    }
+
+    updateParticle(particle, config, intensity) {
+        switch (config.physics) {
+            case 'explosive':
+                particle.vy += particle.gravity;
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                
+                // Add to trail
+                particle.trail.push({ x: particle.x, y: particle.y });
+                if (particle.trail.length > 5) {
+                    particle.trail.shift();
+                }
+                break;
+                
+            case 'flowing':
+                particle.x += particle.vx + (Math.random() - 0.5) * intensity * 2;
+                particle.y += particle.vy;
+                break;
+                
+            case 'orbital':
+                particle.angle += particle.angularSpeed * (1 + intensity * config.sensitivity);
+                particle.x = particle.centerX + Math.cos(particle.angle) * particle.radius;
+                particle.y = particle.centerY + Math.sin(particle.angle) * particle.radius;
+                break;
+        }
+    }
+
+    drawWaveform() {
+        const config = this.visualizers.waveform;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        
+        // Calculate position
+        let baseY;
+        switch (config.position) {
+            case 'top':
+                baseY = height * 0.2;
+                break;
+            case 'bottom':
+                baseY = height * 0.8;
+                break;
+            default: // center
+                baseY = height * 0.5;
+                break;
+        }
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+        this.ctx.strokeStyle = config.color;
+        this.ctx.lineWidth = config.thickness;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        const points = [];
+        const barWidth = width / this.dataArray.length;
+        
+        // Create waveform points
+        for (let i = 0; i < this.dataArray.length; i++) {
+            const amplitude = (this.dataArray[i] / 255) * config.sensitivity;
+            const x = i * barWidth;
+            const y = baseY + (amplitude - 0.5) * height * 0.3;
+            points.push({ x, y, amplitude });
+        }
+        
+        // Apply smoothing
+        if (config.smoothing > 0) {
+            for (let i = 1; i < points.length - 1; i++) {
+                const prev = points[i - 1].y;
+                const curr = points[i].y;
+                const next = points[i + 1].y;
+                points[i].y = curr * (1 - config.smoothing) + (prev + next) * 0.5 * config.smoothing;
+            }
+        }
+        
+        // Draw waveform
+        if (config.type === 'filled' || config.type === 'mirror') {
+            // Draw filled waveform
+            this.ctx.globalAlpha = 0.6;
+            this.ctx.fillStyle = config.color;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, baseY);
+            
+            for (let point of points) {
+                this.ctx.lineTo(point.x, point.y);
+            }
+            
+            this.ctx.lineTo(width, baseY);
+            this.ctx.closePath();
+            this.ctx.fill();
+            
+            // Draw mirror effect
+            if (config.type === 'mirror') {
+                this.ctx.globalAlpha = 0.3;
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, baseY);
+                
+                for (let point of points) {
+                    const mirrorY = baseY - (point.y - baseY);
+                    this.ctx.lineTo(point.x, mirrorY);
+                }
+                
+                this.ctx.lineTo(width, baseY);
+                this.ctx.closePath();
+                this.ctx.fill();
+            }
+        }
+        
+        // Draw line waveform
+        this.ctx.globalAlpha = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, baseY);
+        
+        for (let point of points) {
+            this.ctx.lineTo(point.x, point.y);
+        }
+        
+        this.ctx.stroke();
+        
+        this.ctx.restore();
+    }
+
+    drawTunnel() {
+        const config = this.visualizers.tunnel;
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const time = Date.now() * 0.001;
+        
+        // Get audio intensity
+        let avgIntensity = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+            avgIntensity += this.dataArray[i];
+        }
+        avgIntensity = (avgIntensity / this.dataArray.length) / 255;
+        
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+        this.ctx.strokeStyle = config.color;
+        this.ctx.globalAlpha = config.opacity;
+        
+        // Draw tunnel rings
+        for (let ring = 0; ring < config.rings; ring++) {
+            const depth = ring / config.rings;
+            const scale = 1 - depth;
+            const radius = (this.canvas.width * 0.4 * scale) * (1 + avgIntensity * config.sensitivity * 0.5);
+            
+            // Rotation based on depth and time
+            const rotation = time * config.rotation + depth * Math.PI;
+            
+            this.ctx.lineWidth = Math.max(1, 3 * scale);
+            this.ctx.globalAlpha = config.opacity * scale * (0.5 + avgIntensity * 0.5);
+            
+            // Draw ring segments
+            this.ctx.beginPath();
+            for (let segment = 0; segment <= config.segments; segment++) {
+                const angle = (segment / config.segments) * Math.PI * 2 + rotation;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                if (segment === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            this.ctx.closePath();
+            this.ctx.stroke();
+            
+            // Connect rings with lines
+            if (ring < config.rings - 1) {
+                const nextDepth = (ring + 1) / config.rings;
+                const nextScale = 1 - nextDepth;
+                const nextRadius = (this.canvas.width * 0.4 * nextScale) * (1 + avgIntensity * config.sensitivity * 0.5);
+                const nextRotation = time * config.rotation + nextDepth * Math.PI;
+                
+                this.ctx.globalAlpha = config.opacity * scale * 0.3;
+                this.ctx.lineWidth = 1;
+                
+                for (let segment = 0; segment < config.segments; segment += 4) {
+                    const angle = (segment / config.segments) * Math.PI * 2 + rotation;
+                    const nextAngle = (segment / config.segments) * Math.PI * 2 + nextRotation;
+                    
+                    const x1 = centerX + Math.cos(angle) * radius;
+                    const y1 = centerY + Math.sin(angle) * radius;
+                    const x2 = centerX + Math.cos(nextAngle) * nextRadius;
+                    const y2 = centerY + Math.sin(nextAngle) * nextRadius;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x1, y1);
+                    this.ctx.lineTo(x2, y2);
+                    this.ctx.stroke();
+                }
+            }
+        }
+        
+        this.ctx.restore();
+    }
+
     drawZoomQuiltFrame() {
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
@@ -2801,7 +3462,7 @@ class ZoomQuiltGenerator {
             const conceptualQuiltLayerIndex = Math.floor(currentCycle) * numLoadedImages + baseImageIndex + layer;
             
             visibleLayers.push({
-                imageToRender: imageToRender,
+                imageToRender: imageToRender, // This is the key fix - make sure this points to the right object
                 x,
                 y,
                 scaledWidth,
@@ -2960,24 +3621,36 @@ class ZoomQuiltGenerator {
         tempCtx.imageSmoothingEnabled = true;
         tempCtx.imageSmoothingQuality = 'high';
         
+        // Start with the first (largest) layer
         const firstLayer = visibleLayers[0];
         tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.globalAlpha = firstLayer.alpha;
+        
+        // Draw first layer with rotation
         tempCtx.save();
         tempCtx.translate(firstLayer.x + firstLayer.scaledWidth / 2, firstLayer.y + firstLayer.scaledHeight / 2);
         const firstLayerShapeRotation = this.calculateRotationForImage(firstLayer.layerRotationIndex);
         tempCtx.rotate((firstLayerShapeRotation * Math.PI) / 180);
-        tempCtx.drawImage(
-            firstLayer.imageCanvas,
-            -firstLayer.scaledWidth / 2,
-            -firstLayer.scaledHeight / 2,
-            firstLayer.scaledWidth,
-            firstLayer.scaledHeight
-        );
+        
+        if (firstLayer.imageToRender.isGif) {
+            // For GIFs, we need to draw them specially
+            this.drawAnimatedGifLayerToContext(tempCtx, firstLayer.imageToRender, -firstLayer.scaledWidth / 2, -firstLayer.scaledHeight / 2, firstLayer.scaledWidth, firstLayer.scaledHeight);
+        } else {
+            tempCtx.drawImage(
+                firstLayer.imageToRender.canvas,
+                -firstLayer.scaledWidth / 2,
+                -firstLayer.scaledHeight / 2,
+                firstLayer.scaledWidth,
+                firstLayer.scaledHeight
+            );
+        }
         tempCtx.restore();
         
+        // Progressively blend each subsequent layer
         for (let i = 1; i < visibleLayers.length; i++) {
             const currentLayer = visibleLayers[i];
+            
+            // Create a separate canvas for this layer
             const layerCanvas = document.createElement('canvas');
             const layerCtx = layerCanvas.getContext('2d');
             layerCanvas.width = this.canvas.width;
@@ -2988,27 +3661,69 @@ class ZoomQuiltGenerator {
             layerCtx.globalCompositeOperation = 'source-over';
             layerCtx.globalAlpha = currentLayer.alpha;
 
+            // Draw current layer with rotation
             layerCtx.save();
             layerCtx.translate(currentLayer.x + currentLayer.scaledWidth / 2, currentLayer.y + currentLayer.scaledHeight / 2);
             const currentLayerShapeRotation = this.calculateRotationForImage(currentLayer.layerRotationIndex);
             layerCtx.rotate((currentLayerShapeRotation * Math.PI) / 180);
-            layerCtx.drawImage(
-                currentLayer.imageCanvas,
-                -currentLayer.scaledWidth / 2,
-                -currentLayer.scaledHeight / 2,
-                currentLayer.scaledWidth,
-                currentLayer.scaledHeight
-            );
+            
+            if (currentLayer.imageToRender.isGif) {
+                this.drawAnimatedGifLayerToContext(layerCtx, currentLayer.imageToRender, -currentLayer.scaledWidth / 2, -currentLayer.scaledHeight / 2, currentLayer.scaledWidth, currentLayer.scaledHeight);
+            } else {
+                layerCtx.drawImage(
+                    currentLayer.imageToRender.canvas,
+                    -currentLayer.scaledWidth / 2,
+                    -currentLayer.scaledHeight / 2,
+                    currentLayer.scaledWidth,
+                    currentLayer.scaledHeight
+                );
+            }
             layerCtx.restore();
             
-            tempCtx.globalAlpha = 1.0; 
-            tempCtx.globalCompositeOperation = this.blendMode;
+            // Now blend this layer with the accumulated result using the selected blend mode
+            tempCtx.globalAlpha = 1.0; // Full opacity for blending
+            tempCtx.globalCompositeOperation = this.blendMode; // Apply the actual blend mode
             tempCtx.drawImage(layerCanvas, 0, 0);
         }
         
+        // Draw the final blended result to the main canvas
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.globalAlpha = 1.0;
         this.ctx.drawImage(tempCanvas, 0, 0);
+    }
+
+    drawAnimatedGifLayerToContext(ctx, imageToRender, x, y, width, height) {
+        // Create a temporary canvas for the GIF frame with effects
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = Math.abs(width);
+        tempCanvas.height = Math.abs(height);
+        
+        // Fill with black
+        tempCtx.fillStyle = '#000000';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Draw the current frame of the animated GIF
+        tempCtx.save();
+        tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+        tempCtx.rotate((imageToRender.baseImageRotation * Math.PI) / 180);
+        
+        // Draw the GIF at its current animated frame
+        tempCtx.drawImage(
+            imageToRender.originalData.image,
+            -imageToRender.scaledWidth / 2,
+            -imageToRender.scaledHeight / 2,
+            imageToRender.scaledWidth,
+            imageToRender.scaledHeight
+        );
+        
+        tempCtx.restore();
+        
+        // Apply fade effects to the temporary canvas
+        this.applyFadeEffectWithRotation(tempCtx, tempCanvas.width, tempCanvas.height, 0);
+        
+        // Draw the processed frame to the target context
+        ctx.drawImage(tempCanvas, x, y, width, height);
     }
 
     renderProgressiveBlending(visibleLayers) {
@@ -3832,7 +4547,7 @@ class ZoomQuiltGenerator {
                 const currentLayerShapeRotation = this.calculateRotationForImage(layer.layerRotationIndex);
                 ctx.rotate((currentLayerShapeRotation * Math.PI) / 180);
                 ctx.drawImage(
-                    layer.imageCanvas,
+                    layer.imageCanvas, // This should exist for export
                     -layer.scaledWidth / 2,
                     -layer.scaledHeight / 2,
                     layer.scaledWidth,
@@ -3866,6 +4581,7 @@ class ZoomQuiltGenerator {
             return;
         }
         
+        // For multiple layers with blend modes, use progressive blending
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = width;
@@ -3874,6 +4590,7 @@ class ZoomQuiltGenerator {
         tempCtx.imageSmoothingEnabled = true;
         tempCtx.imageSmoothingQuality = 'high';
 
+        // Start with first layer
         const firstLayer = visibleLayers[0];
         tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.globalAlpha = firstLayer.alpha;
@@ -3890,6 +4607,7 @@ class ZoomQuiltGenerator {
         );
         tempCtx.restore();
         
+        // Blend subsequent layers
         for (let i = 1; i < visibleLayers.length; i++) {
             const currentLayer = visibleLayers[i];
             const layerCanvas = document.createElement('canvas');
@@ -3915,11 +4633,13 @@ class ZoomQuiltGenerator {
             );
             layerCtx.restore();
             
+            // Apply blend mode
             tempCtx.globalAlpha = 1.0;
             tempCtx.globalCompositeOperation = this.blendMode;
             tempCtx.drawImage(layerCanvas, 0, 0);
         }
         
+        // Draw final result
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
         ctx.drawImage(tempCanvas, 0, 0);

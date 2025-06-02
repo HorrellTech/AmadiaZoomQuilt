@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
 
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -91,7 +93,8 @@
                                     <h3>Import Images</h3>
                                     <p>Drag and drop images here or click to browse</p>
                                     <input type="file" id="fileInput" accept="image/*" multiple hidden>
-                                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                    <button class="btn btn-primary"
+                                        onclick="document.getElementById('fileInput').click()">
                                         Choose Files
                                     </button>
                                 </div>
@@ -219,7 +222,7 @@
                             <div class="controls-grid">
                                 <div class="control-group">
                                     <label>
-                                        <input type="checkbox" id="vignetteEnabled"> 
+                                        <input type="checkbox" id="vignetteEnabled">
                                         Enable Vignette
                                     </label>
                                 </div>
@@ -227,19 +230,22 @@
                                 <div class="vignette-controls">
                                     <div class="control-group">
                                         <label for="vignetteIntensity">Vignette Intensity</label>
-                                        <input type="range" id="vignetteIntensity" min="0" max="100" value="50" step="5" disabled>
+                                        <input type="range" id="vignetteIntensity" min="0" max="100" value="50" step="5"
+                                            disabled>
                                         <span class="value-display" id="vignetteIntensityValue">50%</span>
                                     </div>
 
                                     <div class="control-group">
                                         <label for="vignetteSize">Vignette Size</label>
-                                        <input type="range" id="vignetteSize" min="30" max="150" value="80" step="5" disabled>
+                                        <input type="range" id="vignetteSize" min="30" max="150" value="80" step="5"
+                                            disabled>
                                         <span class="value-display" id="vignetteSizeValue">80%</span>
                                     </div>
 
                                     <div class="control-group">
                                         <label for="vignetteFeather">Edge Softness</label>
-                                        <input type="range" id="vignetteFeather" min="0" max="100" value="60" step="5" disabled>
+                                        <input type="range" id="vignetteFeather" min="0" max="100" value="60" step="5"
+                                            disabled>
                                         <span class="value-display" id="vignetteFeatherValue">60%</span>
                                     </div>
                                 </div>
@@ -356,12 +362,13 @@
                                         <h3>Import Audio Track</h3>
                                         <p>Add music to create reactive zoom videos</p>
                                         <input type="file" id="audioInput" accept="audio/*" hidden>
-                                        <button class="btn btn-secondary" onclick="document.getElementById('audioInput').click()">
+                                        <button class="btn btn-secondary"
+                                            onclick="document.getElementById('audioInput').click()">
                                             Choose Audio File
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="audio-info" id="audioInfo" style="display: none;">
                                     <div class="audio-file-info">
                                         <h4>📁 <span id="audioFileName">No file selected</span></h4>
@@ -374,33 +381,37 @@
                             <div class="audio-settings">
                                 <div class="control-group">
                                     <label>
-                                        <input type="checkbox" id="audioEnabled" disabled> 
+                                        <input type="checkbox" id="audioEnabled" disabled>
                                         Enable Audio Reactive Zoom
                                     </label>
                                 </div>
-                                
+
                                 <div class="controls-grid audio-controls">
                                     <div class="control-group">
                                         <label for="audioReactiveIntensity">Reactive Intensity</label>
-                                        <input type="range" id="audioReactiveIntensity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                        <input type="range" id="audioReactiveIntensity" min="0.5" max="5" value="2"
+                                            step="0.1" disabled>
                                         <span class="value-display" id="audioIntensityValue">2.0x</span>
                                     </div>
 
                                     <div class="control-group">
                                         <label for="audioFreqMin">Min Frequency</label>
-                                        <input type="range" id="audioFreqMin" min="20" max="500" value="60" step="10" disabled>
+                                        <input type="range" id="audioFreqMin" min="20" max="500" value="60" step="10"
+                                            disabled>
                                         <span class="value-display" id="audioFreqMinValue">60Hz</span>
                                     </div>
 
                                     <div class="control-group">
                                         <label for="audioFreqMax">Max Frequency</label>
-                                        <input type="range" id="audioFreqMax" min="100" max="1000" value="250" step="10" disabled>
+                                        <input type="range" id="audioFreqMax" min="100" max="1000" value="250" step="10"
+                                            disabled>
                                         <span class="value-display" id="audioFreqMaxValue">250Hz</span>
                                     </div>
 
                                     <div class="control-group">
                                         <label for="audioVolume">Audio Volume</label>
-                                        <input type="range" id="audioVolume" min="0" max="1" value="0.7" step="0.1" disabled>
+                                        <input type="range" id="audioVolume" min="0" max="1" value="0.7" step="0.1"
+                                            disabled>
                                         <span class="value-display" id="audioVolumeValue">70%</span>
                                     </div>
                                 </div>
@@ -425,7 +436,7 @@
                                         </label>
                                     </div>
                                     <p>Multiple reactive circles at different frequencies</p>
-                                    
+
                                     <div class="visualizer-controls circular-controls">
                                         <div class="control-group">
                                             <label for="circularMode">Visualizer Mode</label>
@@ -438,43 +449,50 @@
 
                                         <div class="control-group" id="circularRingCountGroup">
                                             <label for="circularRingCount">Number of Rings</label>
-                                            <input type="range" id="circularRingCount" min="1" max="8" value="3" step="1" disabled>
+                                            <input type="range" id="circularRingCount" min="1" max="8" value="3"
+                                                step="1" disabled>
                                             <span class="value-display" id="circularRingCountValue">3</span>
                                         </div>
 
                                         <div class="control-group" id="circularPointCountGroup" style="display: none;">
                                             <label for="circularPointCount">Number of Points</label>
-                                            <input type="range" id="circularPointCount" min="8" max="64" value="16" step="4" disabled>
+                                            <input type="range" id="circularPointCount" min="8" max="64" value="16"
+                                                step="4" disabled>
                                             <span class="value-display" id="circularPointCountValue">16</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="circularSize">Base Size</label>
-                                            <input type="range" id="circularSize" min="50" max="300" value="100" step="10" disabled>
+                                            <input type="range" id="circularSize" min="50" max="300" value="100"
+                                                step="10" disabled>
                                             <span class="value-display" id="circularSizeValue">100px</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="circularThickness">Line Thickness</label>
-                                            <input type="range" id="circularThickness" min="1" max="20" value="3" step="1" disabled>
+                                            <input type="range" id="circularThickness" min="1" max="20" value="3"
+                                                step="1" disabled>
                                             <span class="value-display" id="circularThicknessValue">3px</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="circularSensitivity">Sensitivity</label>
-                                            <input type="range" id="circularSensitivity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                            <input type="range" id="circularSensitivity" min="0.5" max="5" value="2"
+                                                step="0.1" disabled>
                                             <span class="value-display" id="circularSensitivityValue">2.0x</span>
                                         </div>
 
                                         <div class="control-group" id="circularFreqRangeGroup" style="display: none;">
                                             <label for="circularFreqMin">Min Frequency</label>
-                                            <input type="range" id="circularFreqMin" min="20" max="500" value="60" step="10" disabled>
+                                            <input type="range" id="circularFreqMin" min="20" max="500" value="60"
+                                                step="10" disabled>
                                             <span class="value-display" id="circularFreqMinValue">60Hz</span>
                                         </div>
 
                                         <div class="control-group" id="circularFreqMaxGroup" style="display: none;">
                                             <label for="circularFreqMax">Max Frequency</label>
-                                            <input type="range" id="circularFreqMax" min="100" max="1000" value="800" step="10" disabled>
+                                            <input type="range" id="circularFreqMax" min="100" max="1000" value="800"
+                                                step="10" disabled>
                                             <span class="value-display" id="circularFreqMaxValue">800Hz</span>
                                         </div>
 
@@ -497,29 +515,33 @@
                                         </label>
                                     </div>
                                     <p>Frequency bars along the bottom edge</p>
-                                    
+
                                     <div class="visualizer-controls bar-controls">
                                         <div class="control-group">
                                             <label for="barCount">Number of Bars</label>
-                                            <input type="range" id="barCount" min="16" max="128" value="64" step="8" disabled>
+                                            <input type="range" id="barCount" min="16" max="128" value="64" step="8"
+                                                disabled>
                                             <span class="value-display" id="barCountValue">64</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="barHeight">Max Height</label>
-                                            <input type="range" id="barHeight" min="50" max="300" value="150" step="10" disabled>
+                                            <input type="range" id="barHeight" min="50" max="300" value="150" step="10"
+                                                disabled>
                                             <span class="value-display" id="barHeightValue">150px</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="barWidth">Bar Width</label>
-                                            <input type="range" id="barWidth" min="1" max="20" value="4" step="1" disabled>
+                                            <input type="range" id="barWidth" min="1" max="20" value="4" step="1"
+                                                disabled>
                                             <span class="value-display" id="barWidthValue">4px</span>
                                         </div>
 
                                         <div class="control-group">
                                             <label for="barSensitivity">Sensitivity</label>
-                                            <input type="range" id="barSensitivity" min="0.5" max="5" value="2" step="0.1" disabled>
+                                            <input type="range" id="barSensitivity" min="0.5" max="5" value="2"
+                                                step="0.1" disabled>
                                             <span class="value-display" id="barSensitivityValue">2.0x</span>
                                         </div>
 
@@ -531,6 +553,211 @@
                                         <div class="control-group">
                                             <label for="barGradientEnd">Gradient End</label>
                                             <input type="color" id="barGradientEnd" value="#764ba2" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Starfield Visualizer -->
+                                <div class="visualizer-card">
+                                    <div class="visualizer-header">
+                                        <h3>⭐ Starfield</h3>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="starfieldVisualizerEnabled">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <p>Reactive starfield that pulses with the music</p>
+
+                                    <div class="visualizer-controls starfield-controls">
+                                        <div class="control-group">
+                                            <label for="starfieldStarCount">Number of Stars</label>
+                                            <input type="range" id="starfieldStarCount" min="50" max="500" value="200"
+                                                step="10" disabled>
+                                            <span class="value-display" id="starfieldStarCountValue">200</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="starfieldMaxSize">Max Star Size</label>
+                                            <input type="range" id="starfieldMaxSize" min="1" max="8" value="4"
+                                                step="0.5" disabled>
+                                            <span class="value-display" id="starfieldMaxSizeValue">4px</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="starfieldTwinkleSpeed">Twinkle Speed</label>
+                                            <input type="range" id="starfieldTwinkleSpeed" min="0.5" max="5" value="2"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="starfieldTwinkleSpeedValue">2.0x</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="starfieldSensitivity">Audio Sensitivity</label>
+                                            <input type="range" id="starfieldSensitivity" min="0.5" max="3" value="1.5"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="starfieldSensitivityValue">1.5x</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="starfieldSpeed">Movement Speed</label>
+                                            <input type="range" id="starfieldSpeed" min="0.1" max="2" value="0.5"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="starfieldSpeedValue">0.5x</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Particle Visualizer -->
+                                <div class="visualizer-card">
+                                    <div class="visualizer-header">
+                                        <h3>✨ Particles</h3>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="particleVisualizerEnabled">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <p>Dynamic particle effects with different physics</p>
+
+                                    <div class="visualizer-controls particles-controls">
+                                        <div class="control-group">
+                                            <label for="particlePhysics">Physics Type</label>
+                                            <select id="particlePhysics" disabled>
+                                                <option value="explosive">Explosive</option>
+                                                <option value="flowing">Flowing</option>
+                                                <option value="orbital">Orbital</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="particleCount">Max Particles</label>
+                                            <input type="range" id="particleCount" min="50" max="300" value="150"
+                                                step="10" disabled>
+                                            <span class="value-display" id="particleCountValue">150</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="particleMaxSize">Max Size</label>
+                                            <input type="range" id="particleMaxSize" min="2" max="12" value="6"
+                                                step="0.5" disabled>
+                                            <span class="value-display" id="particleMaxSizeValue">6px</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="particleSensitivity">Audio Sensitivity</label>
+                                            <input type="range" id="particleSensitivity" min="0.5" max="4" value="2"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="particleSensitivityValue">2.0x</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Waveform Visualizer -->
+                                <!--div class="visualizer-card">
+                                    <div class="visualizer-header">
+                                        <h3>🌊 Waveform</h3>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="waveformVisualizerEnabled">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <p>Audio waveform display with various styles</p>
+
+                                    <div class="visualizer-controls waveform-controls">
+                                        <div class="control-group">
+                                            <label for="waveformType">Waveform Type</label>
+                                            <select id="waveformType" disabled>
+                                                <option value="line">Line</option>
+                                                <option value="filled">Filled</option>
+                                                <option value="mirror">Mirror</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="waveformPosition">Position</label>
+                                            <select id="waveformPosition" disabled>
+                                                <option value="center">Center</option>
+                                                <option value="top">Top</option>
+                                                <option value="bottom">Bottom</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="waveformThickness">Line Thickness</label>
+                                            <input type="range" id="waveformThickness" min="1" max="10" value="3"
+                                                step="0.5" disabled>
+                                            <span class="value-display" id="waveformThicknessValue">3px</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="waveformSensitivity">Sensitivity</label>
+                                            <input type="range" id="waveformSensitivity" min="0.5" max="4" value="2"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="waveformSensitivityValue">2.0x</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="waveformSmoothing">Smoothing</label>
+                                            <input type="range" id="waveformSmoothing" min="0" max="1" value="0.8"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="waveformSmoothingValue">80%</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="waveformColor">Color</label>
+                                            <input type="color" id="waveformColor" value="#667eea" disabled>
+                                        </div>
+                                    </div>
+                                </div-->
+
+                                <!-- Tunnel Visualizer -->
+                                <div class="visualizer-card">
+                                    <div class="visualizer-header">
+                                        <h3>🕳️ Tunnel</h3>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="tunnelVisualizerEnabled">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <p>3D tunnel effect that reacts to audio</p>
+
+                                    <div class="visualizer-controls tunnel-controls">
+                                        <div class="control-group">
+                                            <label for="tunnelRings">Number of Rings</label>
+                                            <input type="range" id="tunnelRings" min="3" max="15" value="8" step="1"
+                                                disabled>
+                                            <span class="value-display" id="tunnelRingsValue">8</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="tunnelSegments">Ring Segments</label>
+                                            <input type="range" id="tunnelSegments" min="16" max="64" value="32"
+                                                step="4" disabled>
+                                            <span class="value-display" id="tunnelSegmentsValue">32</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="tunnelSensitivity">Audio Sensitivity</label>
+                                            <input type="range" id="tunnelSensitivity" min="0.5" max="3" value="1.8"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="tunnelSensitivityValue">1.8x</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="tunnelRotation">Rotation Speed</label>
+                                            <input type="range" id="tunnelRotation" min="0" max="2" value="0.5"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="tunnelRotationValue">0.5x</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="tunnelOpacity">Opacity</label>
+                                            <input type="range" id="tunnelOpacity" min="0.1" max="1" value="0.7"
+                                                step="0.1" disabled>
+                                            <span class="value-display" id="tunnelOpacityValue">70%</span>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label for="tunnelColor">Color</label>
+                                            <input type="color" id="tunnelColor" value="#667eea" disabled>
                                         </div>
                                     </div>
                                 </div>
@@ -556,7 +783,8 @@
                             </button>
                             <button class="btn btn-small" id="playPauseBtn">⏸️ Pause</button>
                             <button class="btn btn-small" id="resetBtn">🔄 Reset</button>
-                            <button class="btn btn-small" id="fullscreenBtn" title="Enter Fullscreen">🗖 Fullscreen</button>
+                            <button class="btn btn-small" id="fullscreenBtn" title="Enter Fullscreen">🗖
+                                Fullscreen</button>
                         </div>
                     </div>
                 </section>
@@ -588,8 +816,9 @@
             </div>
         </main>
     </div>
-    
+
     <script src="html5-export.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
