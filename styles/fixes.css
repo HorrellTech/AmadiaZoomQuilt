@@ -1,0 +1,152 @@
+/* Force left panel to extend to bottom of page properly */
+.left-panel {
+    min-height: calc(100vh - 140px) !important;
+    max-height: none !important;
+    position: static !important;
+    top: auto !important;
+}
+
+/* Ensure main layout takes full height */
+.main-layout {
+    min-height: calc(100vh - 120px);
+}
+
+/* Make sure tab content can scroll if needed */
+.tab-content {
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+}
+
+/* Fix export panel styling */
+.export-section {
+    background: rgba(26, 26, 46, 0.6) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid #2a2a3e !important;
+}
+
+.export-section h2 {
+    font-size: 1.4rem !important;
+}
+
+/* Fix export button alignment */
+.export-actions {
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.export-info-panel {
+    background: rgba(16, 16, 30, 0.4) !important;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #374151;
+}
+
+/* Fix fullscreen canvas controls positioning */
+.canvas-container:not(.fullscreen-active) .canvas-controls {
+    margin-top: 1rem !important;
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    z-index: auto !important;
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+}
+
+/* Ensure canvas container returns to normal layout after fullscreen */
+.canvas-container:not(.fullscreen-active) {
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+    background: rgba(16, 16, 30, 0.4) !important;
+    z-index: auto !important;
+    display: block !important;
+    align-items: initial !important;
+    justify-content: initial !important;
+    top: auto !important;
+    left: auto !important;
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #374151;
+}
+
+/* Ensure canvas returns to normal size after fullscreen */
+.canvas-container:not(.fullscreen-active) #zoomCanvas {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: initial !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
+    z-index: auto !important;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .left-panel {
+        min-height: calc(100vh - 120px) !important;
+    }
+    
+    .tab-content {
+        max-height: calc(100vh - 300px);
+    }
+}
+
+@media (max-width: 992px) {
+    .left-panel {
+        min-height: auto !important;
+    }
+    
+    .tab-content {
+        max-height: none;
+    }
+    
+    .main-layout {
+        min-height: auto;
+    }
+}
+
+/* Additional fixes for proper spacing */
+.mode-toggle-container {
+    margin-bottom: 1.5rem !important;
+}
+
+header {
+    margin-bottom: 1.5rem !important;
+    padding: 1rem 0 !important;
+}
+
+/* Ensure right panel sections have consistent spacing */
+.right-panel {
+    gap: 1.5rem !important;
+}
+
+.canvas-section {
+    margin-bottom: 0 !important;
+}
+
+.image-list-section {
+    margin-bottom: 0 !important;
+}
+
+.export-section {
+    margin-bottom: 0 !important;
+}

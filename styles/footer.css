@@ -1,0 +1,535 @@
+/* Floating Coffee Button */
+.floating-coffee-btn {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    top: auto !important;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f1c40f 0%, #f39c12 50%, #e67e22 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: 600;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4);
+    z-index: 1000;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    opacity: 0.7;
+    margin: 0 !important;
+    transform: none !important;
+}
+
+/* Glowing ring effect */
+.floating-coffee-btn::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(135deg, #f1c40f, #f39c12, #e67e22, #f1c40f);
+    border-radius: 50%;
+    opacity: 0;
+    z-index: -1;
+    filter: blur(8px);
+    transition: opacity 0.4s ease;
+}
+
+/* Pulsing glow animation */
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 
+            0 0 20px rgba(241, 196, 15, 0.3),
+            0 0 40px rgba(241, 196, 15, 0.1),
+            0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px rgba(241, 196, 15, 0.5),
+            0 0 60px rgba(241, 196, 15, 0.2),
+            0 6px 25px rgba(0, 0, 0, 0.3);
+    }
+    100% {
+        box-shadow: 
+            0 0 20px rgba(241, 196, 15, 0.3),
+            0 0 40px rgba(241, 196, 15, 0.1),
+            0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.floating-coffee-btn {
+    animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Hover effects */
+.floating-coffee-btn:hover {
+    transform: translateY(-5px) scale(1.1) !important;
+    opacity: 1;
+    text-decoration: none;
+    color: white;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 
+        0 0 40px rgba(241, 196, 15, 0.8),
+        0 0 80px rgba(241, 196, 15, 0.4),
+        0 8px 30px rgba(0, 0, 0, 0.4);
+    animation: none;
+}
+
+.floating-coffee-btn:hover::before {
+    opacity: 0.3;
+}
+
+.floating-coffee-btn:active {
+    transform: translateY(-2px) scale(1.05) !important;
+    opacity: 0.9;
+}
+
+/* Enhanced tooltip */
+.floating-coffee-btn::after {
+    content: 'Buy me a coffee ☕';
+    position: absolute;
+    right: 75px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.9));
+    color: #f1c40f;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(241, 196, 15, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.floating-coffee-btn:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-5px);
+}
+
+/* Shine effect on hover - Fix conflicting ::before */
+.floating-coffee-btn:hover::before {
+    opacity: 0.3;
+    background: linear-gradient(135deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.1) 25%, 
+        rgba(255, 255, 255, 0.2) 50%, 
+        rgba(255, 255, 255, 0.1) 75%, 
+        transparent 100%);
+}
+
+/* Remove body padding since we removed the footer */
+body {
+    padding-bottom: 0;
+}
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-layout {
+    flex: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .floating-coffee-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.2rem !important;
+        bottom: 15px !important;
+        right: 15px !important;
+    }
+    
+    .floating-coffee-btn::after {
+        right: 60px;
+        font-size: 0.75rem;
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .floating-coffee-btn {
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 1.1rem !important;
+        bottom: 10px !important;
+        right: 10px !important;
+        opacity: 0.8;
+    }
+    
+    .floating-coffee-btn::after {
+        right: 55px;
+        font-size: 0.7rem;
+        padding: 6px 10px;
+        content: 'Coffee ☕';
+    }
+    
+    .floating-coffee-btn:hover {
+        opacity: 1;
+    }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .floating-coffee-btn {
+        border-width: 3px;
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .floating-coffee-btn::after {
+        background: rgba(0, 0, 0, 0.95);
+        border-color: rgba(241, 196, 15, 0.8);
+    }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .floating-coffee-btn {
+        animation: none;
+    }
+    
+    .floating-coffee-btn:hover {
+        transform: scale(1.05) !important;
+    }
+    
+    .floating-coffee-btn::after {
+        transition: opacity 0.2s ease;
+    }
+}
+
+
+/* Help Button */
+.help-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.help-button:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.help-button:active {
+    transform: translateY(-1px) scale(1.05);
+}
+
+/* Start Modal Styles */
+.start-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.start-modal-overlay.active {
+    opacity: 1;
+}
+
+.start-modal {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    border: 1px solid #2a2a3e;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 800px;
+    max-height: 90vh;
+    width: 90vw;
+    overflow: hidden;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.start-modal-overlay.active .start-modal {
+    transform: scale(1) translateY(0);
+}
+
+.start-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.start-modal-header h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.start-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.start-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.start-modal-content {
+    padding: 2rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    color: #e0e6ed;
+}
+
+.start-modal-section {
+    margin-bottom: 2rem;
+}
+
+.start-modal-section h3 {
+    color: #f1f5f9;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-left: 4px solid #667eea;
+    padding-left: 1rem;
+}
+
+.start-modal-section p {
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    color: #9ca3af;
+}
+
+.start-modal-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.step-number {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.step-content h4 {
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.step-content p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.pro-tips, .advanced-features {
+    display: grid;
+    gap: 1rem;
+}
+
+.tip, .feature {
+    background: rgba(26, 26, 46, 0.6);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #374151;
+}
+
+.tip {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.tip-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.tip p, .feature p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.feature h4 {
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.start-modal-footer {
+    padding: 1.5rem 2rem;
+    background: rgba(16, 16, 30, 0.6);
+    border-top: 1px solid #2a2a3e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.start-modal-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.start-modal-checkbox input[type="checkbox"] {
+    width: auto;
+}
+
+.start-modal-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.start-modal-buttons .btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .help-button {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+        top: 15px;
+        right: 15px;
+    }
+    
+    .start-modal {
+        width: 95vw;
+        max-height: 95vh;
+    }
+    
+    .start-modal-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .start-modal-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .start-modal-content {
+        padding: 1.5rem;
+    }
+    
+    .start-modal-footer {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .start-modal-buttons {
+        justify-content: center;
+    }
+    
+    .pro-tips, .advanced-features {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .start-modal-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .step {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .tip {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Scrollbar styling for modal content */
+.start-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.start-modal-content::-webkit-scrollbar-track {
+    background: rgba(16, 16, 30, 0.4);
+    border-radius: 4px;
+}
+
+.start-modal-content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.6);
+    border-radius: 4px;
+}
+
+.start-modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+}

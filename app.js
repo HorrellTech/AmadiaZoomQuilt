@@ -157,6 +157,19 @@ class ZoomQuiltGenerator {
     
         // Initialize HTML5 Exporter after script loads
         this.initializeHTML5Exporter();
+        
+        // Initialize start modal
+        this.initializeStartModal();
+    }
+
+    initializeStartModal() {
+        // Initialize the start modal when available
+        if (typeof StartModal !== 'undefined') {
+            this.startModal = new StartModal();
+        } else {
+            // If StartModal is not loaded yet, wait a bit and try again
+            setTimeout(() => this.initializeStartModal(), 100);
+        }
     }
 
     initializeHTML5Exporter() {
