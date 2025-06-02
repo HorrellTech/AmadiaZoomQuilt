@@ -150,3 +150,958 @@ header {
 .export-section {
     margin-bottom: 0 !important;
 }
+
+
+
+/* Custom Checkbox Styling to Match Theme */
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 4px !important;
+    background: #2a2a3e !important;
+    cursor: pointer !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+input[type="checkbox"]:hover {
+    border-color: #667eea !important;
+    background: #373752 !important;
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.2) !important;
+}
+
+input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+input[type="checkbox"]:checked::before {
+    content: "✓" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    color: white !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+}
+
+/* Focus state for accessibility */
+input[type="checkbox"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="checkbox"]:focus:checked {
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Disabled state */
+input[type="checkbox"]:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+    border-color: #373752 !important;
+}
+
+input[type="checkbox"]:disabled:checked {
+    background: #4a4a5e !important;
+    border-color: #4a4a5e !important;
+}
+
+input[type="checkbox"]:disabled:checked::before {
+    color: #9ca3af !important;
+}
+
+/* Specific styling for toggle switches in visualizer cards */
+.toggle-switch input[type="checkbox"] {
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    border: none !important;
+    background: none !important;
+}
+
+/* Ensure checkbox labels have proper spacing and alignment */
+.checkbox-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    color: #e0e6ed !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+}
+
+.checkbox-label:hover {
+    color: #f1f5f9 !important;
+}
+
+/* Checkbox in option groups for modals */
+.option-group .checkbox-label {
+    margin-bottom: 0.5rem !important;
+}
+
+.option-group .checkbox-options .checkbox-label {
+    margin-bottom: 0.75rem !important;
+}
+
+/* Radio button styling to match */
+input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 50% !important;
+    background: #2a2a3e !important;
+    cursor: pointer !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+input[type="radio"]:hover {
+    border-color: #667eea !important;
+    background: #373752 !important;
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.2) !important;
+}
+
+input[type="radio"]:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+input[type="radio"]:checked::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: white !important;
+}
+
+input[type="radio"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="radio"]:focus:checked {
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="radio"]:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+    border-color: #373752 !important;
+}
+
+input[type="radio"]:disabled:checked {
+    background: #4a4a5e !important;
+    border-color: #4a4a5e !important;
+}
+
+input[type="radio"]:disabled:checked::before {
+    background: #9ca3af !important;
+}
+
+/* Radio label styling */
+.radio-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    color: #e0e6ed !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.radio-label:hover {
+    color: #f1f5f9 !important;
+}
+
+/* Special handling for start modal checkboxes */
+.start-modal-checkbox input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin-right: 0.5rem !important;
+}
+
+.start-modal-checkbox input[type="checkbox"]:checked::before {
+    font-size: 11px !important;
+}
+
+/* Ensure proper checkbox styling in all contexts */
+.control-group input[type="checkbox"],
+.rotation-controls input[type="checkbox"],
+.vignette-controls input[type="checkbox"],
+.audio-controls input[type="checkbox"],
+.canvas-settings-section input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+
+/* Custom Slider Styling with Glow Effects */
+input[type="range"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    height: 6px !important;
+    border-radius: 3px !important;
+    background: linear-gradient(to right, #2a2a3e 0%, #4a4a5e 100%) !important;
+    outline: none !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Hover state - glowing effect */
+input[type="range"]:hover {
+    background: linear-gradient(to right, #373752 0%, #5a5a7e 100%) !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Active/dragging state - darker */
+input[type="range"]:active {
+    background: linear-gradient(to right, #1a1a2e 0%, #373752 100%) !important;
+    box-shadow: 0 0 16px rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Focus state for accessibility */
+input[type="range"]:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="range"]:focus:hover {
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.3),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* WebKit (Chrome/Safari) slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    height: 18px !important;
+    width: 18px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    cursor: pointer !important;
+    border: 2px solid #667eea !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.1) !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.5),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    border-color: #8b9cf0 !important;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.05) !important;
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%) !important;
+    border-color: #5a67d8 !important;
+    box-shadow: 
+        0 0 16px rgba(102, 126, 234, 0.7),
+        0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Firefox slider thumb */
+input[type="range"]::-moz-range-thumb {
+    height: 18px !important;
+    width: 18px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    cursor: pointer !important;
+    border: 2px solid #667eea !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+    transform: scale(1.1) !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.5),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    border-color: #8b9cf0 !important;
+}
+
+input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.05) !important;
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%) !important;
+    border-color: #5a67d8 !important;
+    box-shadow: 
+        0 0 16px rgba(102, 126, 234, 0.7),
+        0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Firefox slider track */
+input[type="range"]::-moz-range-track {
+    height: 6px !important;
+    border-radius: 3px !important;
+    background: linear-gradient(to right, #2a2a3e 0%, #4a4a5e 100%) !important;
+    border: none !important;
+}
+
+input[type="range"]:hover::-moz-range-track {
+    background: linear-gradient(to right, #373752 0%, #5a5a7e 100%) !important;
+}
+
+input[type="range"]:active::-moz-range-track {
+    background: linear-gradient(to right, #1a1a2e 0%, #373752 100%) !important;
+}
+
+/* Internet Explorer/Edge slider thumb */
+input[type="range"]::-ms-thumb {
+    height: 18px !important;
+    width: 18px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    cursor: pointer !important;
+    border: 2px solid #667eea !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+input[type="range"]::-ms-track {
+    height: 6px !important;
+    border-radius: 3px !important;
+    background: linear-gradient(to right, #2a2a3e 0%, #4a4a5e 100%) !important;
+    border: none !important;
+    color: transparent !important;
+}
+
+/* Disabled slider styling */
+input[type="range"]:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+    background: #4a4a5e !important;
+    border-color: #4a4a5e !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+    background: #4a4a5e !important;
+    border-color: #4a4a5e !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Special styling for audio visualizer sliders */
+.audio-controls input[type="range"],
+.visualizer-controls input[type="range"] {
+    margin: 0.5rem 0 !important;
+}
+
+/* Color picker styling to match */
+input[type="color"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 40px !important;
+    height: 32px !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    padding: 0 !important;
+    background: none !important;
+}
+
+input[type="color"]:hover {
+    border-color: #667eea !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+    transform: scale(1.05) !important;
+}
+
+input[type="color"]:active {
+    transform: scale(1.02) !important;
+    box-shadow: 0 0 16px rgba(102, 126, 234, 0.5) !important;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 4px !important;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none !important;
+    border-radius: 4px !important;
+}
+
+input[type="color"]::-moz-color-swatch {
+    border: none !important;
+    border-radius: 4px !important;
+}
+
+/* Custom Select/Dropdown Styling */
+select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background: linear-gradient(135deg, #2a2a3e 0%, #373752 100%) !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    color: #e0e6ed !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+    padding: 0.6rem 2.5rem 0.6rem 1rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+    min-width: 120px !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.7rem center !important;
+    background-size: 1em !important;
+}
+
+select:hover {
+    border-color: #667eea !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+    color: #f1f5f9 !important;
+}
+
+select:focus {
+    border-color: #667eea !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+}
+
+select:active {
+    background: linear-gradient(135deg, #1a1a2e 0%, #2a2a3e 100%) !important;
+    box-shadow: 0 0 16px rgba(102, 126, 234, 0.5) !important;
+}
+
+select:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+    border-color: #373752 !important;
+    color: #9ca3af !important;
+}
+
+/* Select option styling */
+select option {
+    background: #2a2a3e !important;
+    color: #e0e6ed !important;
+    padding: 0.5rem !important;
+    border: none !important;
+}
+
+select option:hover,
+select option:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+/* Text Input Styling */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"] {
+    background: linear-gradient(135deg, #2a2a3e 0%, #373752 100%) !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    color: #e0e6ed !important;
+    font-size: 0.9rem !important;
+    padding: 0.6rem 1rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+}
+
+input[type="text"]:hover,
+input[type="number"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="search"]:hover,
+input[type="url"]:hover,
+input[type="tel"]:hover {
+    border-color: #667eea !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus {
+    border-color: #667eea !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    color: #f1f5f9 !important;
+}
+
+input[type="text"]:disabled,
+input[type="number"]:disabled,
+input[type="email"]:disabled,
+input[type="password"]:disabled,
+input[type="search"]:disabled,
+input[type="url"]:disabled,
+input[type="tel"]:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+    border-color: #373752 !important;
+    color: #9ca3af !important;
+}
+
+/* Textarea Styling */
+textarea {
+    background: linear-gradient(135deg, #2a2a3e 0%, #373752 100%) !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    color: #e0e6ed !important;
+    font-size: 0.9rem !important;
+    padding: 1rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+    resize: vertical !important;
+    min-height: 80px !important;
+    font-family: inherit !important;
+}
+
+textarea:hover {
+    border-color: #667eea !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+textarea:focus {
+    border-color: #667eea !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    color: #f1f5f9 !important;
+}
+
+textarea:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #1a1a2e !important;
+    border-color: #373752 !important;
+    color: #9ca3af !important;
+    resize: none !important;
+}
+
+/* File Input Styling */
+input[type="file"] {
+    background: linear-gradient(135deg, #2a2a3e 0%, #373752 100%) !important;
+    border: 2px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    color: #e0e6ed !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+    padding: 0.6rem 1rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+}
+
+input[type="file"]:hover {
+    border-color: #667eea !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+input[type="file"]:focus {
+    border-color: #667eea !important;
+    box-shadow: 
+        0 0 12px rgba(102, 126, 234, 0.4),
+        0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    color: white !important;
+    cursor: pointer !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    margin-right: 1rem !important;
+    padding: 0.4rem 0.8rem !important;
+    transition: all 0.3s ease !important;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Progress Bar Styling */
+progress {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 100% !important;
+    height: 8px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    background: #2a2a3e !important;
+    overflow: hidden !important;
+}
+
+progress::-webkit-progress-bar {
+    background: #2a2a3e !important;
+    border-radius: 4px !important;
+}
+
+progress::-webkit-progress-value {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease !important;
+}
+
+progress::-moz-progress-bar {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 4px !important;
+}
+
+/* Range input with datalist (tick marks) */
+datalist {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 0.25rem !important;
+    font-size: 0.75rem !important;
+    color: #9ca3af !important;
+}
+
+/* Meter element styling */
+meter {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 100% !important;
+    height: 8px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    background: #2a2a3e !important;
+}
+
+meter::-webkit-meter-bar {
+    background: #2a2a3e !important;
+    border-radius: 4px !important;
+}
+
+meter::-webkit-meter-optimum-value {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+    border-radius: 4px !important;
+}
+
+meter::-webkit-meter-suboptimum-value {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%) !important;
+    border-radius: 4px !important;
+}
+
+meter::-webkit-meter-even-less-good-value {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%) !important;
+    border-radius: 4px !important;
+}
+
+/* Button improvements (if any default buttons exist) */
+button:not(.btn):not(.control-btn):not(.preset-btn):not(.modal-close) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 2px solid #667eea !important;
+    border-radius: 8px !important;
+    color: white !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+}
+
+button:not(.btn):not(.control-btn):not(.preset-btn):not(.modal-close):hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%) !important;
+    border-color: #5a67d8 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+button:not(.btn):not(.control-btn):not(.preset-btn):not(.modal-close):active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+button:not(.btn):not(.control-btn):not(.preset-btn):not(.modal-close):disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Details/Summary (accordion) styling */
+details {
+    background: rgba(26, 26, 46, 0.6) !important;
+    border: 1px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    overflow: hidden !important;
+}
+
+summary {
+    background: linear-gradient(135deg, #2a2a3e 0%, #373752 100%) !important;
+    color: #e0e6ed !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    padding: 1rem !important;
+    transition: all 0.3s ease !important;
+    outline: none !important;
+    list-style: none !important;
+}
+
+summary::-webkit-details-marker {
+    display: none !important;
+}
+
+summary::before {
+    content: "▶" !important;
+    display: inline-block !important;
+    margin-right: 0.5rem !important;
+    transition: transform 0.3s ease !important;
+    color: #667eea !important;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg) !important;
+}
+
+summary:hover {
+    background: linear-gradient(135deg, #373752 0%, #4a4a5e 100%) !important;
+    color: #f1f5f9 !important;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.2) !important;
+}
+
+details[open] summary {
+    border-bottom: 1px solid #4a4a5e !important;
+}
+
+/* Fieldset and Legend styling */
+fieldset {
+    border: 2px solid #4a4a5e !important;
+    border-radius: 8px !important;
+    margin: 1rem 0 !important;
+    padding: 1rem !important;
+    background: rgba(26, 26, 46, 0.3) !important;
+}
+
+legend {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 0.4rem 0.8rem !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+}
+
+/* Placeholder text styling */
+::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+}
+
+::-webkit-input-placeholder {
+    color: #9ca3af !important;
+}
+
+::-moz-placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+}
+
+:-ms-input-placeholder {
+    color: #9ca3af !important;
+}
+
+/* Mode Toggle Button Styling - Size and Glow Based Selection */
+.mode-toggle-container .mode-btn,
+.mode-toggle .mode-btn,
+button.mode-btn {
+    background: linear-gradient(135deg, #4a4a5e 0%, #5a5a7e 100%) !important;
+    border: 2px solid #6a6a8e !important;
+    color: #d1d5db !important;
+    transition: all 0.4s ease !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    text-align: center !important;
+    outline: none !important;
+    transform: scale(1) !important;
+    box-shadow: none !important;
+}
+
+.mode-toggle-container .mode-btn:hover,
+.mode-toggle .mode-btn:hover,
+button.mode-btn:hover {
+    background: linear-gradient(135deg, #5a5a7e 0%, #6a6a8e 100%) !important;
+    border-color: #7a7a9e !important;
+    color: #e5e7eb !important;
+    box-shadow: 0 0 8px rgba(106, 106, 142, 0.3) !important;
+    transform: scale(1.05) translateY(-1px) !important;
+}
+
+/* Active/Selected Mode Button - 25% Larger with Glow */
+.mode-toggle-container .mode-btn.active,
+.mode-toggle .mode-btn.active,
+button.mode-btn.active,
+.mode-btn[data-mode].active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+    transform: scale(1.25) !important;
+    box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.6),
+        0 0 40px rgba(102, 126, 234, 0.4),
+        0 8px 32px rgba(102, 126, 234, 0.3) !important;
+    z-index: 10 !important;
+    position: relative !important;
+}
+
+.mode-toggle-container .mode-btn.active:hover,
+.mode-toggle .mode-btn.active:hover,
+button.mode-btn.active:hover,
+.mode-btn[data-mode].active:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%) !important;
+    border-color: #5a67d8 !important;
+    transform: scale(1.3) !important;
+    box-shadow: 
+        0 0 25px rgba(102, 126, 234, 0.8),
+        0 0 50px rgba(102, 126, 234, 0.5),
+        0 12px 40px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+}
+
+/* Ensure the container can handle the larger button */
+.mode-toggle-container {
+    display: flex !important;
+    gap: 2rem !important;
+    justify-content: center !important;
+    margin-bottom: 2rem !important;
+    padding: 1rem !important;
+    align-items: center !important;
+}
+
+.mode-toggle {
+    display: flex !important;
+    gap: 1.5rem !important;
+    align-items: center !important;
+}
+
+/* Override any existing button styles that might interfere */
+.mode-btn.btn,
+button.mode-btn.btn {
+    background: linear-gradient(135deg, #4a4a5e 0%, #5a5a7e 100%) !important;
+    border: 2px solid #6a6a8e !important;
+    color: #d1d5db !important;
+    transform: scale(1) !important;
+    box-shadow: none !important;
+}
+
+.mode-btn.btn.active,
+button.mode-btn.btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+    transform: scale(1.25) !important;
+    box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.6),
+        0 0 40px rgba(102, 126, 234, 0.4),
+        0 8px 32px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Additional fallback targeting by data attributes if they exist */
+[data-mode="simple"],
+[data-mode="advanced"] {
+    background: linear-gradient(135deg, #4a4a5e 0%, #5a5a7e 100%) !important;
+    border: 2px solid #6a6a8e !important;
+    color: #d1d5db !important;
+    transform: scale(1) !important;
+    box-shadow: none !important;
+}
+
+[data-mode="simple"].active,
+[data-mode="advanced"].active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+    transform: scale(1.25) !important;
+    box-shadow: 
+        0 0 20px rgba(102, 126, 234, 0.6),
+        0 0 40px rgba(102, 126, 234, 0.4),
+        0 8px 32px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Responsive adjustments for mode toggles */
+@media (max-width: 768px) {
+    .mode-toggle-container {
+        flex-direction: column !important;
+        gap: 1rem !important;
+        padding: 0.5rem !important;
+    }
+    
+    .mode-toggle {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .mode-btn {
+        min-width: auto !important;
+        width: 200px !important;
+    }
+    
+    .mode-btn.active {
+        transform: scale(1.15) !important;
+    }
+    
+    .mode-btn.active:hover {
+        transform: scale(1.2) !important;
+    }
+}

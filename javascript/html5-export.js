@@ -1,9 +1,18 @@
 class HTML5Exporter {
     constructor(zoomQuiltGenerator) {
         this.zoomQuilt = zoomQuiltGenerator;
+
+        // Flag to control HTML5 export availability - set to false for now
+        this.isHTML5ExportEnabled = false; // Change to true when ready for testing
     }
 
     async exportHTML5Package() {
+        // Check if HTML5 export is enabled
+        if (!this.isHTML5ExportEnabled) {
+            this.showWorkInProgressModal();
+            return;
+        }
+
         if (this.zoomQuilt.loadedImages.length === 0) {
             this.zoomQuilt.showNotification('Please import images first', 'warning');
             return;
@@ -143,6 +152,207 @@ class HTML5Exporter {
                 element.addEventListener('change', () => this.updateHTML5ExportEstimate());
             }
         });
+    }
+
+    showWorkInProgressModal() {
+        const modalHtml = `
+            <div class="modal-overlay" id="wipModal">
+                <div class="modal-content wip-modal">
+                    <div class="modal-header wip-header">
+                        <h3>🚧 Work in Progress</h3>
+                        <button class="modal-close" onclick="html5Exporter.closeWorkInProgressModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="wip-content">
+                            <div class="wip-icon">🔨</div>
+                            <h4>HTML5 Export Coming Soon!</h4>
+                            <p>We're currently working on the HTML5 export feature to bring you the best possible experience.</p>
+                            
+                            <div class="wip-features">
+                                <h5>What's planned:</h5>
+                                <ul>
+                                    <li>✨ Interactive web applications</li>
+                                    <li>🌐 Standalone HTML5 packages</li>
+                                    <li>📱 Mobile-friendly exports</li>
+                                    <li>🎵 Audio-reactive web experiences</li>
+                                    <li>⚙️ Customizable player controls</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="wip-alternative">
+                                <h5>In the meantime:</h5>
+                                <p>You can use the <strong>Video Export</strong> feature to create MP4, WebM, or GIF animations!</p>
+                                <button class="btn btn-primary" onclick="html5Exporter.closeWorkInProgressModal(); zoomQuilt.selectExportFormat('video');">
+                                    🎬 Try Video Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="html5Exporter.closeWorkInProgressModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        this.addWorkInProgressStyles();
+    }
+
+    addWorkInProgressStyles() {
+        // Only add styles if they don't already exist
+        if (document.head.querySelector('style[data-wip-styles]')) {
+            return;
+        }
+
+        const style = document.createElement('style');
+        style.setAttribute('data-wip-styles', 'true');
+        style.textContent = `
+            .wip-modal {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+            
+            .wip-header {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                color: white;
+            }
+            
+            .wip-content {
+                text-align: center;
+                padding: 1rem 0;
+            }
+            
+            .wip-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+                animation: bounce 2s infinite;
+            }
+            
+            .wip-content h4 {
+                color: #f1f5f9;
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+            
+            .wip-content p {
+                color: #9ca3af;
+                margin-bottom: 1.5rem;
+                line-height: 1.6;
+            }
+            
+            .wip-features {
+                background: rgba(26, 26, 46, 0.6);
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin: 1.5rem 0;
+                text-align: left;
+            }
+            
+            .wip-features h5 {
+                color: #f1f5f9;
+                margin-bottom: 1rem;
+                font-size: 1.1rem;
+                text-align: center;
+            }
+            
+            .wip-features ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .wip-features li {
+                color: #9ca3af;
+                padding: 0.5rem 0;
+                padding-left: 1.5rem;
+                position: relative;
+            }
+            
+            .wip-features li::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 6px;
+                height: 6px;
+                background: #10b981;
+                border-radius: 50%;
+            }
+            
+            .wip-alternative {
+                background: rgba(16, 185, 129, 0.1);
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-top: 1.5rem;
+            }
+            
+            .wip-alternative h5 {
+                color: #10b981;
+                margin-bottom: 0.75rem;
+                font-size: 1.1rem;
+            }
+            
+            .wip-alternative p {
+                color: #d1d5db;
+                margin-bottom: 1rem;
+                font-size: 0.95rem;
+            }
+            
+            .wip-alternative .btn {
+                margin-top: 0.5rem;
+            }
+            
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .wip-modal {
+                    max-width: 95vw;
+                    margin: 1rem;
+                }
+                
+                .wip-content {
+                    padding: 0.5rem 0;
+                }
+                
+                .wip-icon {
+                    font-size: 3rem;
+                }
+                
+                .wip-features,
+                .wip-alternative {
+                    padding: 1rem;
+                    margin: 1rem 0;
+                }
+            }
+        `;
+        
+        document.head.appendChild(style);
+    }
+
+    closeWorkInProgressModal() {
+        const modal = document.getElementById('wipModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    // Add a method to enable/disable HTML5 export for testing
+    setHTML5ExportEnabled(enabled) {
+        this.isHTML5ExportEnabled = enabled;
+        console.log(`HTML5 Export ${enabled ? 'enabled' : 'disabled'} for testing`);
     }
 
     updateHTML5ExportEstimate() {

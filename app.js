@@ -176,7 +176,16 @@ class ZoomQuiltGenerator {
         // Initialize the HTML5 exporter when available
         if (typeof HTML5Exporter !== 'undefined') {
             this.html5Exporter = new HTML5Exporter(this);
-            window.html5Exporter = this.html5Exporter; // Make it globally available
+            window.html5Exporter = this.html5Exporter;
+            
+            // Add a global method for easy testing of HTML5 export
+            window.enableHTML5Export = (enabled = true) => {
+                this.html5Exporter.setHTML5ExportEnabled(enabled);
+                const status = enabled ? 'enabled' : 'disabled';
+                this.showNotification(`HTML5 Export ${status} for testing`, 'info');
+            };
+            
+            console.log('HTML5 Exporter initialized. Use enableHTML5Export(true) to enable for testing.');
         } else {
             // Retry after a short delay if not loaded yet
             setTimeout(() => this.initializeHTML5Exporter(), 100);
